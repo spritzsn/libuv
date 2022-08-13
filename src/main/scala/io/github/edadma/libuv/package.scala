@@ -95,4 +95,8 @@ package object libuv:
       timerCallbacks(handle) = callback
       lib.uv_timer_start(handle, timerCallback, timeout, repeat)
 
-    def stop: Int = lib.uv_timer_stop(handle)
+    def stop: Int =
+      val res = lib.uv_timer_stop(handle)
+
+      free(handle)
+      res
