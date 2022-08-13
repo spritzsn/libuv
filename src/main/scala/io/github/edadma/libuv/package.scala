@@ -78,3 +78,13 @@ package object libuv:
     def now: Long = lib.uv_now(loop)
 
   def defaultLoop: Loop = lib.uv_default_loop
+
+  object Timer:
+    def apply(timeout: Long, repeat: Long = 0): Timer =
+      val timer: Timer = malloc(lib.uv_loop_size)
+
+      timer
+
+  def handleSize(typ: HandleType): Int = lib.uv_handle_size(typ.value).toInt
+
+  implicit class Timer(val loop: lib.uv_timer_t) extends AnyVal
