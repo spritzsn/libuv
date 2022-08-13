@@ -1,8 +1,9 @@
 package io.github.edadma
 
-import scala.scalanative.unsafe._
-import scala.scalanative.unsigned._
-import scala.scalanative.libc.stdlib._
+import scala.collection.mutable
+import scala.scalanative.unsafe.*
+import scala.scalanative.unsigned.*
+import scala.scalanative.libc.stdlib.*
 
 package object libuv:
 
@@ -65,11 +66,11 @@ package object libuv:
     def apply(): Loop =
       val loop: Loop = malloc(lib.uv_loop_size)
 
-      loop.loopInit
+      loop.init
       loop
 
   implicit class Loop(val loop: lib.uv_loop_t) extends AnyVal:
-    def loopInit: Int = lib.uv_loop_init(loop)
+    def init: Int = lib.uv_loop_init(loop)
 
     def run(mode: RunMode = RunMode.RUN_DEFAULT): Int = lib.uv_run(loop, mode.value)
 
@@ -77,14 +78,19 @@ package object libuv:
 
     def now: Long = lib.uv_now(loop)
 
-  def defaultLoop: Loop = lib.uv_default_loop
+    def timer: Timer =
+      val timer = malloc(lib.uv_handle_size(HandleType.TIMER.value))
 
-  object Timer:
-    def apply(timeout: Long, repeat: Long = 0): Timer =
-      val timer: Timer = malloc(lib.uv_loop_size)
-
+      lib.uv_timer_init(loop, timer)
       timer
 
-  def handleSize(typ: HandleType): Int = lib.uv_handle_size(typ.value).toInt
+  def defaultLoop: Loop = lib.uv_default_loop
 
-  implicit class Timer(val loop: lib.uv_timer_t) extends AnyVal
+  private val timerCallbacks = new mutable.HashMap[lib.uv_timer_t, Timer => Unit]
+
+  private val timerCallback: lib.uv_timer_cb = (t: lib.uv_timer_t) => timerCallbacks(t)(t)
+
+  implicit class Timer(val handle: lib.uv_timer_t) extends AnyVal:
+    def start(callback: Timer => Unit, timeout: Long, repeat: Long = 0): Int =
+      timerCallbacks(handle) = callback
+      lib.uv_timer_start(handle, timerCallback, timeout, repeat)
