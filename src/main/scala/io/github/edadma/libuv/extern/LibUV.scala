@@ -37,7 +37,11 @@ object LibUV:
 
   type uv_run_mode = CInt
 
-  def uv_run(loop: uv_loop_t, mode: uv_run_mode): Int = extern
+  def uv_run(loop: uv_loop_t, mode: uv_run_mode): CInt = extern
+
+  def uv_update_time(loop: uv_loop_t): Unit = extern
+
+  def uv_now(loop: uv_loop_t): CLong = extern
 
   //
   // uv_handle_t — Base handle
@@ -72,6 +76,32 @@ object LibUV:
   def uv_req_size(typ: uv_req_type): CSize = extern
 
   //
+  // uv_timer_t — Timer handle
+  //
+
+  type uv_timer_t = Ptr[Byte]
+  type uv_timer_cb = CFuncPtr1[uv_timer_t, Unit]
+
+  def uv_timer_init(loop: uv_loop_t, handle: uv_timer_t): CInt = extern
+
+  def uv_timer_start(handle: uv_timer_t, cb: uv_timer_cb, timeout: CLong, repeat: CLong): CInt = extern
+
+  def uv_timer_stop(handle: uv_timer_t): CInt = extern
+
+  //
+  // uv_prepare_t — Prepare handle
+  //
+
+  type uv_prepare_t = Ptr[Byte]
+  type uv_prepare_cb = CFuncPtr1[uv_prepare_t, Unit]
+
+  def uv_prepare_init(loop: uv_loop_t, handle: uv_prepare_t): Int = extern
+
+  def uv_prepare_start(handle: uv_prepare_t, cb: uv_prepare_cb): Int = extern
+
+  def uv_prepare_stop(handle: uv_prepare_t): Unit = extern
+
+  //
 
   type PipeHandle = Ptr[Byte]
   type PollHandle = Ptr[Ptr[Byte]]
@@ -83,7 +113,6 @@ object LibUV:
   ], CUnsignedInt, CUnsignedInt]
   type ExitCB = CFuncPtr3[ProcessHandle, CLong, CInt, Unit]
   type TTYHandle = Ptr[Byte]
-  type Loop = Ptr[Byte]
   type Buffer = CStruct2[Ptr[Byte], CSize]
   type WriteReq = Ptr[Ptr[Byte]]
   type ShutdownReq = Ptr[Ptr[Byte]]
@@ -98,22 +127,12 @@ object LibUV:
   type WorkCB = CFuncPtr1[WorkReq, Unit]
   type AfterWorkCB = CFuncPtr2[WorkReq, Int, Unit]
 
-  type PrepareHandle = Ptr[Byte]
-  type TimerHandle = Ptr[Byte]
-  type PrepareCB = CFuncPtr1[PrepareHandle, Unit]
-  type TimerCB = CFuncPtr1[TimerHandle, Unit]
 
   type RWLock = Ptr[Byte]
 
-  def uv_prepare_init(loop: Loop, handle: PrepareHandle): Int = extern
+  def uv_tty_init(loop: uv_loop_t, handle: TTYHandle, fd: Int, readable: Int): Int = extern
 
-  def uv_prepare_start(handle: PrepareHandle, cb: PrepareCB): Int = extern
-
-  def uv_prepare_stop(handle: PrepareHandle): Unit = extern
-
-  def uv_tty_init(loop: Loop, handle: TTYHandle, fd: Int, readable: Int): Int = extern
-
-  def uv_tcp_init(loop: Loop, tcp_handle: TCPHandle): Int = extern
+  def uv_tcp_init(loop: uv_loop_t, tcp_handle: TCPHandle): Int = extern
 
   def uv_tcp_bind(tcp_handle: TCPHandle, address: Ptr[Byte], flags: Int): Int = extern
 
@@ -121,23 +140,17 @@ object LibUV:
 
   def uv_ip4_name(address: Ptr[Byte], s: CString, size: Int): Int = extern
 
-  def uv_pipe_init(loop: Loop, handle: PipeHandle, ipc: Int): Int = extern
+  def uv_pipe_init(loop: uv_loop_t, handle: PipeHandle, ipc: Int): Int = extern
 
   def uv_pipe_open(handle: PipeHandle, fd: Int): Int = extern
 
   def uv_pipe_bind(handle: PipeHandle, socketName: CString): Int = extern
 
-  def uv_poll_init_socket(loop: Loop, handle: PollHandle, socket: Ptr[Byte]): Int = extern
+  def uv_poll_init_socket(loop: uv_loop_t, handle: PollHandle, socket: Ptr[Byte]): Int = extern
 
   def uv_poll_start(handle: PollHandle, events: Int, cb: PollCB): Int = extern
 
   def uv_poll_stop(handle: PollHandle): Int = extern
-
-  def uv_timer_init(loop: Loop, handle: TimerHandle): Int = extern
-
-  def uv_timer_start(handle: TimerHandle, cb: TimerCB, timeout: Long, repeat: Long): Int = extern
-
-  def uv_timer_stop(handle: TimerHandle): Int = extern
 
   def uv_listen(handle: PipeHandle, backlog: Int, callback: ConnectionCB): Int = extern
 
@@ -156,15 +169,15 @@ object LibUV:
   type FSReq = Ptr[Ptr[Byte]]
   type FSCB = CFuncPtr1[FSReq, Unit]
 
-  def uv_fs_open(loop: Loop, req: FSReq, path: CString, flags: Int, mode: Int, cb: FSCB): Int = extern
+  def uv_fs_open(loop: uv_loop_t, req: FSReq, path: CString, flags: Int, mode: Int, cb: FSCB): Int = extern
 
-  def uv_fs_read(loop: Loop, req: FSReq, fd: Int, bufs: Ptr[Buffer], numBufs: Int, offset: Long, fsCB: FSCB): Int =
+  def uv_fs_read(loop: uv_loop_t, req: FSReq, fd: Int, bufs: Ptr[Buffer], numBufs: Int, offset: Long, fsCB: FSCB): Int =
     extern
 
-  def uv_fs_write(loop: Loop, req: FSReq, fd: Int, bufs: Ptr[Buffer], numBufs: Int, offset: Long, fsCB: FSCB): Int =
+  def uv_fs_write(loop: uv_loop_t, req: FSReq, fd: Int, bufs: Ptr[Buffer], numBufs: Int, offset: Long, fsCB: FSCB): Int =
     extern
 
-  def uv_fs_close(loop: Loop, req: FSReq, fd: Int, fsCB: FSCB): Int = extern
+  def uv_fs_close(loop: uv_loop_t, req: FSReq, fd: Int, fsCB: FSCB): Int = extern
 
   def uv_req_cleanup(req: FSReq): Unit = extern
 
@@ -172,7 +185,7 @@ object LibUV:
 
   def uv_fs_get_ptr(req: FSReq): Ptr[Byte] = extern
 
-  //  def uv_queue_work(loop: Loop, req: WorkReq, work_cb: WorkCB, after_work_cb: AfterWorkCB): Int = extern
+  //  def uv_queue_work(loop: uv_loop_t, req: WorkReq, work_cb: WorkCB, after_work_cb: AfterWorkCB): Int = extern
   //
   //  def uv_rwlock_init(rwlock: RWLock): Int = extern
   //
@@ -186,7 +199,7 @@ object LibUV:
   //
   //  def uv_rwlock_wrunlock(rwlock: RWLock): Unit = extern
 
-  def uv_spawn(loop: Loop, handle: ProcessHandle, options: Ptr[ProcessOptions]): CInt = extern
+  def uv_spawn(loop: uv_loop_t, handle: ProcessHandle, options: Ptr[ProcessOptions]): CInt = extern
 
   //
   // Miscellaneous utilities
