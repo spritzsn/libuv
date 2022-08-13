@@ -2,5 +2,17 @@ package io.github.edadma.libuv
 
 @main def run(): Unit =
   println("wait")
-  defaultLoop.timer.start(t => println("boom"), 1000, 500)
+
+  var count = 0
+
+  defaultLoop.timer.start(
+    t => {
+      println("boom")
+      count += 1
+
+      if count == 5 then t.stop
+    },
+    1000,
+    500,
+  )
   println(defaultLoop.run())
