@@ -19,9 +19,9 @@ object LibUV:
   // Error handling
   //
 
-  def uv_strerror(err: Int): CString = extern
+  def uv_strerror(err: CInt): CString = extern
 
-  def uv_err_name(err: Int): CString = extern
+  def uv_err_name(err: CInt): CString = extern
 
   //
   // uv_loop_t — Event loop
@@ -49,6 +49,7 @@ object LibUV:
 
   type uv_handle_t = Ptr[Byte]
   type uv_handle_type = CInt
+  type uv_alloc_cb = CFuncPtr3[uv_handle_t, CSize, Ptr[Buffer], Unit]
 
   def uv_is_active(handle: uv_handle_t): CInt = extern
 
@@ -60,7 +61,7 @@ object LibUV:
 
   def uv_handle_size(typ: uv_handle_type): CSize = extern
 
-  def uv_fileno(handle: uv_handle_t, fd: uv_os_fd_tp): Int = extern
+  def uv_fileno(handle: uv_handle_t, fd: uv_os_fd_tp): CInt = extern
 
   def uv_handle_type_name(typ: uv_handle_type): CString = extern
 
@@ -95,99 +96,167 @@ object LibUV:
   type uv_prepare_t = Ptr[Byte]
   type uv_prepare_cb = CFuncPtr1[uv_prepare_t, Unit]
 
-  def uv_prepare_init(loop: uv_loop_t, handle: uv_prepare_t): Int = extern
+  def uv_prepare_init(loop: uv_loop_t, handle: uv_prepare_t): CInt = extern
 
-  def uv_prepare_start(handle: uv_prepare_t, cb: uv_prepare_cb): Int = extern
+  def uv_prepare_start(handle: uv_prepare_t, cb: uv_prepare_cb): CInt = extern
 
   def uv_prepare_stop(handle: uv_prepare_t): Unit = extern
 
   //
+  // uv_check_t — Check handle
+  //
+
+  type uv_check_t = Ptr[Byte]
+  type uv_check_cb = CFuncPtr1[uv_check_t, Unit]
+
+  def uv_check_init(loop: uv_loop_t, handle: uv_check_t): CInt = extern
+
+  def uv_check_start(handle: uv_check_t, cb: uv_check_cb): CInt = extern
+
+  def uv_check_stop(handle: uv_check_t): Unit = extern
+
+  //
+  // uv_idle_t — Idle handle
+  //
+
+  type uv_idle_t = Ptr[Byte]
+  type uv_idle_cb = CFuncPtr1[uv_idle_t, Unit]
+
+  def uv_idle_init(loop: uv_loop_t, handle: uv_idle_t): CInt = extern
+
+  def uv_idle_start(handle: uv_idle_t, cb: uv_idle_cb): CInt = extern
+
+  def uv_idle_stop(handle: uv_idle_t): Unit = extern
+
+  //
+  // uv_async_t — Async handle
+  //
+
+  type uv_async_t = Ptr[Byte]
+  type uv_async_cb = CFuncPtr1[uv_async_t, Unit]
+
+  def uv_async_init(loop: uv_loop_t, handle: uv_async_t, cb: uv_async_cb): CInt = extern
+
+  def uv_async_send(handle: uv_async_t): CInt = extern
+
+  //
+  // uv_process_t — Process handle
+  //
+
+  type uv_process_t = Ptr[Byte]
+  type uv_process_options_t =
+    CStruct10[uv_exit_cb, CString, Ptr[CString], Ptr[CString], CString, CUnsignedInt, CInt, Ptr[
+      uv_stdio_container_t,
+    ], CUnsignedInt, CUnsignedInt]
+  type uv_exit_cb = CFuncPtr3[uv_process_t, CLong, CInt, Unit]
+  type uv_process_flags = CInt
+  type uv_stdio_container_t = CStruct2[CInt, Ptr[Byte]]
+  type uv_stdio_flags = CInt
+
+  def uv_spawn(loop: uv_loop_t, handle: uv_process_t, options: Ptr[uv_process_options_t]): CInt = extern
+
+  //
+  // uv_stream_t — Stream handle
+  //
+
+  type uv_stream_t = Ptr[Byte]
+  type uv_connect_t = Ptr[Byte]
+  type uv_shutdown_t = Ptr[Byte]
+  type uv_write_t = Ptr[Byte]
+
+  //
+  // uv_tcp_t — TCP handle
+  //
 
   type PipeHandle = Ptr[Byte]
   type PollHandle = Ptr[Ptr[Byte]]
-  type TCPHandle = Ptr[Byte]
-  type ProcessHandle = Ptr[Byte]
-  type StdioContainer = CStruct2[CInt, Ptr[Byte]]
-  type ProcessOptions = CStruct10[ExitCB, CString, Ptr[CString], Ptr[CString], CString, CUnsignedInt, CInt, Ptr[
-    StdioContainer,
-  ], CUnsignedInt, CUnsignedInt]
-  type ExitCB = CFuncPtr3[ProcessHandle, CLong, CInt, Unit]
   type TTYHandle = Ptr[Byte]
   type Buffer = CStruct2[Ptr[Byte], CSize]
   type WriteReq = Ptr[Ptr[Byte]]
   type ShutdownReq = Ptr[Ptr[Byte]]
   type WorkReq = Ptr[Ptr[Byte]]
   type Connection = Ptr[Byte]
-  type ConnectionCB = CFuncPtr2[TCPHandle, Int, Unit]
-  type AllocCB = CFuncPtr3[TCPHandle, CSize, Ptr[Buffer], Unit]
-  type ReadCB = CFuncPtr3[TCPHandle, CSSize, Ptr[Buffer], Unit]
+  type ConnectionCB = CFuncPtr2[uv_stream_t, Int, Unit]
+  type ReadCB = CFuncPtr3[uv_stream_t, CSSize, Ptr[Buffer], Unit]
   type WriteCB = CFuncPtr2[WriteReq, Int, Unit]
   type ShutdownCB = CFuncPtr2[ShutdownReq, Int, Unit]
   type PollCB = CFuncPtr3[PollHandle, Int, Int, Unit]
   type WorkCB = CFuncPtr1[WorkReq, Unit]
   type AfterWorkCB = CFuncPtr2[WorkReq, Int, Unit]
 
-
   type RWLock = Ptr[Byte]
 
-  def uv_tty_init(loop: uv_loop_t, handle: TTYHandle, fd: Int, readable: Int): Int = extern
+  def uv_tty_init(loop: uv_loop_t, handle: TTYHandle, fd: CInt, readable: CInt): CInt = extern
 
-  def uv_tcp_init(loop: uv_loop_t, tcp_handle: TCPHandle): Int = extern
+  def uv_tcp_init(loop: uv_loop_t, tcp_handle: uv_stream_t): CInt = extern
 
-  def uv_tcp_bind(tcp_handle: TCPHandle, address: Ptr[Byte], flags: Int): Int = extern
+  def uv_tcp_bind(tcp_handle: uv_stream_t, address: Ptr[Byte], flags: CInt): CInt = extern
 
-  def uv_ip4_addr(address: CString, port: Int, out_addr: Ptr[Byte]): Int = extern
+  def uv_pipe_init(loop: uv_loop_t, handle: PipeHandle, ipc: CInt): CInt = extern
 
-  def uv_ip4_name(address: Ptr[Byte], s: CString, size: Int): Int = extern
+  def uv_pipe_open(handle: PipeHandle, fd: CInt): CInt = extern
 
-  def uv_pipe_init(loop: uv_loop_t, handle: PipeHandle, ipc: Int): Int = extern
+  def uv_pipe_bind(handle: PipeHandle, socketName: CString): CInt = extern
 
-  def uv_pipe_open(handle: PipeHandle, fd: Int): Int = extern
+  def uv_poll_init_socket(loop: uv_loop_t, handle: PollHandle, socket: Ptr[Byte]): CInt = extern
 
-  def uv_pipe_bind(handle: PipeHandle, socketName: CString): Int = extern
+  def uv_poll_start(handle: PollHandle, events: CInt, cb: PollCB): CInt = extern
 
-  def uv_poll_init_socket(loop: uv_loop_t, handle: PollHandle, socket: Ptr[Byte]): Int = extern
+  def uv_poll_stop(handle: PollHandle): CInt = extern
 
-  def uv_poll_start(handle: PollHandle, events: Int, cb: PollCB): Int = extern
+  def uv_listen(handle: PipeHandle, backlog: CInt, callback: ConnectionCB): CInt = extern
 
-  def uv_poll_stop(handle: PollHandle): Int = extern
+  def uv_accept(server: PipeHandle, client: PipeHandle): CInt = extern
 
-  def uv_listen(handle: PipeHandle, backlog: Int, callback: ConnectionCB): Int = extern
+  def uv_read_start(client: PipeHandle, allocCB: uv_alloc_cb, readCB: ReadCB): CInt = extern
 
-  def uv_accept(server: PipeHandle, client: PipeHandle): Int = extern
+  def uv_write(writeReq: WriteReq, client: PipeHandle, bufs: Ptr[Buffer], numBufs: CInt, writeCB: WriteCB): CInt =
+    extern
 
-  def uv_read_start(client: PipeHandle, allocCB: AllocCB, readCB: ReadCB): Int = extern
+  def uv_read_stop(client: PipeHandle): CInt = extern
 
-  def uv_write(writeReq: WriteReq, client: PipeHandle, bufs: Ptr[Buffer], numBufs: Int, writeCB: WriteCB): Int = extern
+  def uv_shutdown(shutdownReq: ShutdownReq, client: PipeHandle, shutdownCB: ShutdownCB): CInt = extern
 
-  def uv_read_stop(client: PipeHandle): Int = extern
-
-  def uv_shutdown(shutdownReq: ShutdownReq, client: PipeHandle, shutdownCB: ShutdownCB): Int = extern
-
-  def uv_guess_handle(fd: Int): Int = extern
+  def uv_guess_handle(fd: CInt): CInt = extern
 
   type FSReq = Ptr[Ptr[Byte]]
   type FSCB = CFuncPtr1[FSReq, Unit]
 
-  def uv_fs_open(loop: uv_loop_t, req: FSReq, path: CString, flags: Int, mode: Int, cb: FSCB): Int = extern
+  def uv_fs_open(loop: uv_loop_t, req: FSReq, path: CString, flags: CInt, mode: CInt, cb: FSCB): CInt = extern
 
-  def uv_fs_read(loop: uv_loop_t, req: FSReq, fd: Int, bufs: Ptr[Buffer], numBufs: Int, offset: Long, fsCB: FSCB): Int =
+  def uv_fs_read(
+      loop: uv_loop_t,
+      req: FSReq,
+      fd: CInt,
+      bufs: Ptr[Buffer],
+      numBufs: CInt,
+      offset: Long,
+      fsCB: FSCB,
+  ): CInt =
     extern
 
-  def uv_fs_write(loop: uv_loop_t, req: FSReq, fd: Int, bufs: Ptr[Buffer], numBufs: Int, offset: Long, fsCB: FSCB): Int =
+  def uv_fs_write(
+      loop: uv_loop_t,
+      req: FSReq,
+      fd: CInt,
+      bufs: Ptr[Buffer],
+      numBufs: CInt,
+      offset: Long,
+      fsCB: FSCB,
+  ): CInt =
     extern
 
-  def uv_fs_close(loop: uv_loop_t, req: FSReq, fd: Int, fsCB: FSCB): Int = extern
+  def uv_fs_close(loop: uv_loop_t, req: FSReq, fd: CInt, fsCB: FSCB): CInt = extern
 
   def uv_req_cleanup(req: FSReq): Unit = extern
 
-  def uv_fs_get_result(req: FSReq): Int = extern
+  def uv_fs_get_result(req: FSReq): CInt = extern
 
   def uv_fs_get_ptr(req: FSReq): Ptr[Byte] = extern
 
-  //  def uv_queue_work(loop: uv_loop_t, req: WorkReq, work_cb: WorkCB, after_work_cb: AfterWorkCB): Int = extern
+  //  def uv_queue_work(loop: uv_loop_t, req: WorkReq, work_cb: WorkCB, after_work_cb: AfterWorkCB): CInt = extern
   //
-  //  def uv_rwlock_init(rwlock: RWLock): Int = extern
+  //  def uv_rwlock_init(rwlock: RWLock): CInt = extern
   //
   //  def uv_rwlock_destroy(rwlock: RWLock): Unit = extern
   //
@@ -199,11 +268,18 @@ object LibUV:
   //
   //  def uv_rwlock_wrunlock(rwlock: RWLock): Unit = extern
 
-  def uv_spawn(loop: uv_loop_t, handle: ProcessHandle, options: Ptr[ProcessOptions]): CInt = extern
-
   //
   // Miscellaneous utilities
   //
 
-  type uv_os_fd_t = CStruct0
+  type uv_buf_t = CStruct2[Ptr[Byte], CSize]
+  type uv_file = CInt
+  type uv_os_fd_t = CInt
   type uv_os_fd_tp = Ptr[uv_os_fd_t]
+  type uv_pid_t = CInt
+  type sockaddr_in = CStruct0 // netinet/in.h
+  type sockaddr_inp = Ptr[sockaddr_in]
+
+  def uv_ip4_addr(ip: CString, port: CInt, addr: sockaddr_inp): CInt = extern
+
+  def uv_ip4_name(src: sockaddr_inp, dst: CString, size: CSize): CInt = extern
