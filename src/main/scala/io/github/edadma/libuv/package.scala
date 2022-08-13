@@ -1,5 +1,9 @@
 package io.github.edadma
 
+import scala.scalanative.unsafe._
+import scala.scalanative.unsigned._
+import scala.scalanative.libc.stdlib._
+
 package object libuv:
 
   import extern.{LibUV => lib}
@@ -48,3 +52,29 @@ package object libuv:
     final val RUN_DEFAULT = new RunMode(0)
     final val RUN_ONCE = new RunMode(1)
     final val RUN_NOWAIT = new RunMode(2)
+
+  def version: Long = lib.uv_version.toLong
+
+  def versionString: String = fromCString(lib.uv_version_string)
+
+  def strError(err: Int): String = fromCString(lib.uv_strerror(err))
+
+  def errName(err: Int): String = fromCString(lib.uv_err_name(err))
+
+  object Loop:
+    def apply(): Loop =
+      val loop: Loop = malloc(lib.uv_loop_size)
+
+      loop.loopInit
+      loop
+
+  implicit class Loop(val loop: lib.uv_loop_t) extends AnyVal:
+    def loopInit: Int = lib.uv_loop_init(loop)
+
+    def run(mode: RunMode = RunMode.RUN_DEFAULT): Int = lib.uv_run(loop, mode.value)
+
+    def updateTime(): Unit = lib.uv_update_time(loop)
+
+    def now: Long = lib.uv_now(loop)
+
+  def defaultLoop: Loop = lib.uv_default_loop

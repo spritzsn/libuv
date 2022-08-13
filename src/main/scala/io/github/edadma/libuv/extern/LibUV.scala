@@ -49,7 +49,7 @@ object LibUV:
 
   type uv_handle_t = Ptr[Byte]
   type uv_handle_type = CInt
-  type uv_alloc_cb = CFuncPtr3[uv_handle_t, CSize, Ptr[Buffer], Unit]
+  type uv_alloc_cb = CFuncPtr3[uv_handle_t, CSize, uv_buf_tp, Unit]
 
   def uv_is_active(handle: uv_handle_t): CInt = extern
 
@@ -160,62 +160,81 @@ object LibUV:
   //
 
   type uv_stream_t = Ptr[Byte]
-  type uv_connect_t = Ptr[Byte]
-  type uv_shutdown_t = Ptr[Byte]
-  type uv_write_t = Ptr[Byte]
+  type uv_shutdown_t = Ptr[Ptr[Byte]]
+  type uv_write_t = Ptr[Ptr[Byte]]
+  type uv_connection_cb = CFuncPtr2[uv_stream_t, CInt, Unit]
+  type uv_read_cb = CFuncPtr3[uv_stream_t, CSSize, uv_buf_tp, Unit]
+  type uv_write_cb = CFuncPtr2[uv_write_t, Int, Unit]
+  type uv_shutdown_cb = CFuncPtr2[uv_shutdown_t, Int, Unit]
+
+  def uv_shutdown(req: uv_shutdown_t, handle: uv_stream_t, cb: uv_shutdown_cb): CInt = extern
+
+  def uv_listen(handle: uv_stream_t, backlog: CInt, db: uv_connection_cb): CInt = extern
+
+  def uv_accept(server: uv_stream_t, client: uv_stream_t): CInt = extern
+
+  def uv_read_start(stream: uv_stream_t, alloc_cb: uv_alloc_cb, read_cb: uv_read_cb): CInt = extern
+
+  def uv_write(
+      req: uv_write_t,
+      handle: uv_stream_t,
+      bufs: uv_buf_tp,
+      nbufs: CUnsignedInt,
+      db: uv_write_cb,
+  ): CInt =
+    extern
+
+  def uv_read_stop(handle: uv_stream_t): CInt = extern
 
   //
   // uv_tcp_t — TCP handle
   //
 
-  type PipeHandle = Ptr[Byte]
+  type uv_tcp_t = Ptr[Byte]
+
+  def uv_tcp_init(loop: uv_loop_t, handle: uv_tcp_t): CInt = extern
+
+  def uv_tcp_bind(tcp_handle: uv_tcp_t, addr: sockaddr_inp, flags: CInt): CInt = extern
+
+  //
+  // Miscellaneous utilities
+  //
+
+  type uv_buf_t = CStruct2[Ptr[Byte], CSize]
+  type uv_buf_tp = Ptr[uv_buf_t]
+  type uv_file = CInt
+  type uv_os_fd_t = CInt
+  type uv_os_fd_tp = Ptr[uv_os_fd_t]
+  type uv_pid_t = CInt
+  type sockaddr_in = CStruct0 // netinet/in.h
+  type sockaddr_inp = Ptr[sockaddr_in]
+
+  def uv_ip4_addr(ip: CString, port: CInt, addr: sockaddr_inp): CInt = extern
+
+  def uv_ip4_name(src: sockaddr_inp, dst: CString, size: CSize): CInt = extern
+
+  //
+
   type PollHandle = Ptr[Ptr[Byte]]
   type TTYHandle = Ptr[Byte]
-  type Buffer = CStruct2[Ptr[Byte], CSize]
-  type WriteReq = Ptr[Ptr[Byte]]
-  type ShutdownReq = Ptr[Ptr[Byte]]
-  type WorkReq = Ptr[Ptr[Byte]]
   type Connection = Ptr[Byte]
-  type ConnectionCB = CFuncPtr2[uv_stream_t, Int, Unit]
-  type ReadCB = CFuncPtr3[uv_stream_t, CSSize, Ptr[Buffer], Unit]
-  type WriteCB = CFuncPtr2[WriteReq, Int, Unit]
-  type ShutdownCB = CFuncPtr2[ShutdownReq, Int, Unit]
   type PollCB = CFuncPtr3[PollHandle, Int, Int, Unit]
-  type WorkCB = CFuncPtr1[WorkReq, Unit]
-  type AfterWorkCB = CFuncPtr2[WorkReq, Int, Unit]
 
   type RWLock = Ptr[Byte]
 
   def uv_tty_init(loop: uv_loop_t, handle: TTYHandle, fd: CInt, readable: CInt): CInt = extern
 
-  def uv_tcp_init(loop: uv_loop_t, tcp_handle: uv_stream_t): CInt = extern
+  def uv_pipe_init(loop: uv_loop_t, handle: uv_stream_t, ipc: CInt): CInt = extern
 
-  def uv_tcp_bind(tcp_handle: uv_stream_t, address: Ptr[Byte], flags: CInt): CInt = extern
+  def uv_pipe_open(handle: uv_stream_t, fd: CInt): CInt = extern
 
-  def uv_pipe_init(loop: uv_loop_t, handle: PipeHandle, ipc: CInt): CInt = extern
-
-  def uv_pipe_open(handle: PipeHandle, fd: CInt): CInt = extern
-
-  def uv_pipe_bind(handle: PipeHandle, socketName: CString): CInt = extern
+  def uv_pipe_bind(handle: uv_stream_t, socketName: CString): CInt = extern
 
   def uv_poll_init_socket(loop: uv_loop_t, handle: PollHandle, socket: Ptr[Byte]): CInt = extern
 
   def uv_poll_start(handle: PollHandle, events: CInt, cb: PollCB): CInt = extern
 
   def uv_poll_stop(handle: PollHandle): CInt = extern
-
-  def uv_listen(handle: PipeHandle, backlog: CInt, callback: ConnectionCB): CInt = extern
-
-  def uv_accept(server: PipeHandle, client: PipeHandle): CInt = extern
-
-  def uv_read_start(client: PipeHandle, allocCB: uv_alloc_cb, readCB: ReadCB): CInt = extern
-
-  def uv_write(writeReq: WriteReq, client: PipeHandle, bufs: Ptr[Buffer], numBufs: CInt, writeCB: WriteCB): CInt =
-    extern
-
-  def uv_read_stop(client: PipeHandle): CInt = extern
-
-  def uv_shutdown(shutdownReq: ShutdownReq, client: PipeHandle, shutdownCB: ShutdownCB): CInt = extern
 
   def uv_guess_handle(fd: CInt): CInt = extern
 
@@ -228,7 +247,7 @@ object LibUV:
       loop: uv_loop_t,
       req: FSReq,
       fd: CInt,
-      bufs: Ptr[Buffer],
+      bufs: uv_buf_tp,
       numBufs: CInt,
       offset: Long,
       fsCB: FSCB,
@@ -239,7 +258,7 @@ object LibUV:
       loop: uv_loop_t,
       req: FSReq,
       fd: CInt,
-      bufs: Ptr[Buffer],
+      bufs: uv_buf_tp,
       numBufs: CInt,
       offset: Long,
       fsCB: FSCB,
@@ -267,19 +286,3 @@ object LibUV:
   //  def uv_rwlock_wrlock(rwlock: RWLock): Unit = extern
   //
   //  def uv_rwlock_wrunlock(rwlock: RWLock): Unit = extern
-
-  //
-  // Miscellaneous utilities
-  //
-
-  type uv_buf_t = CStruct2[Ptr[Byte], CSize]
-  type uv_file = CInt
-  type uv_os_fd_t = CInt
-  type uv_os_fd_tp = Ptr[uv_os_fd_t]
-  type uv_pid_t = CInt
-  type sockaddr_in = CStruct0 // netinet/in.h
-  type sockaddr_inp = Ptr[sockaddr_in]
-
-  def uv_ip4_addr(ip: CString, port: CInt, addr: sockaddr_inp): CInt = extern
-
-  def uv_ip4_name(src: sockaddr_inp, dst: CString, size: CSize): CInt = extern
