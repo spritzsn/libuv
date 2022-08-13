@@ -24,18 +24,35 @@ object LibUV:
   def uv_err_name(err: Int): CString = extern
 
   //
+  // uv_loop_t — Event loop
+  //
+
+  type uv_loop_t = Ptr[Byte]
+
+  def uv_loop_init(loop: uv_loop_t): CInt = extern
+
+  def uv_default_loop: uv_loop_t = extern
+
+  def uv_loop_size: CSize = extern
+
+  type uv_run_mode = CInt
+
+  def uv_run(loop: uv_loop_t, mode: uv_run_mode): Int = extern
+
+  //
   // uv_handle_t — Base handle
   //
 
-  type uv_handle_t = CStruct0
-  type uv_handle_tp = Ptr[uv_handle_t]
+  type uv_handle_t = Ptr[Byte]
   type uv_handle_type = CInt
 
-  def uv_is_closing(handle: uv_handle_tp): CInt = extern
+  def uv_is_active(handle: uv_handle_t): CInt = extern
 
-  type uv_close_cb = CFuncPtr1[uv_handle_tp, Unit]
+  def uv_is_closing(handle: uv_handle_t): CInt = extern
 
-  def uv_close(handle: uv_handle_tp, close_cb: uv_close_cb): Unit = extern
+  type uv_close_cb = CFuncPtr1[uv_handle_t, Unit]
+
+  def uv_close(handle: uv_handle_t, close_cb: uv_close_cb): Unit = extern
 
   def uv_handle_size(typ: uv_handle_type): CSize = extern
 
@@ -47,9 +64,12 @@ object LibUV:
   // uv_req_t — Base request
   //
 
-  type uv_req_t = CStruct2[Ptr[Byte], CInt]
-  type uv_req_tp = Ptr[uv_req_t]
+  type uv_req_t = Ptr[Byte]
   type uv_req_type = CInt
+
+  def uv_cancel(req: uv_req_t): CInt = extern
+
+  def uv_req_size(typ: uv_req_type): CSize = extern
 
   //
 
@@ -91,14 +111,6 @@ object LibUV:
 
   def uv_prepare_stop(handle: PrepareHandle): Unit = extern
 
-  def uv_default_loop(): Loop = extern
-
-  def uv_loop_size(): CSize = extern
-
-  def uv_is_active(handle: Ptr[Byte]): Int = extern
-
-  def uv_req_size(r_type: Int): CSize = extern
-
   def uv_tty_init(loop: Loop, handle: TTYHandle, fd: Int, readable: Int): Int = extern
 
   def uv_tcp_init(loop: Loop, tcp_handle: TCPHandle): Int = extern
@@ -138,8 +150,6 @@ object LibUV:
   def uv_read_stop(client: PipeHandle): Int = extern
 
   def uv_shutdown(shutdownReq: ShutdownReq, client: PipeHandle, shutdownCB: ShutdownCB): Int = extern
-
-  def uv_run(loop: Loop, runMode: Int): Int = extern
 
   def uv_guess_handle(fd: Int): Int = extern
 

@@ -41,3 +41,10 @@ package object libuv:
     final val GETADDRINFO = new ReqType(8)
     final val GETNAMEINFO = new ReqType(9)
     final val REQ_TYPE_MAX = new ReqType(10)
+
+  implicit class RunMode(val value: lib.uv_run_mode) extends AnyVal
+
+  object RunMode:
+    final val RUN_DEFAULT = new RunMode(0)
+    final val RUN_ONCE = new RunMode(1)
+    final val RUN_NOWAIT = new RunMode(2)
