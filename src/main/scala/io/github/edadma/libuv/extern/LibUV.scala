@@ -100,7 +100,7 @@ object LibUV:
 
   def uv_prepare_start(handle: uv_prepare_t, cb: uv_prepare_cb): CInt = extern
 
-  def uv_prepare_stop(handle: uv_prepare_t): Unit = extern
+  def uv_prepare_stop(handle: uv_prepare_t): CInt = extern
 
   //
   // uv_check_t — Check handle
@@ -113,7 +113,7 @@ object LibUV:
 
   def uv_check_start(handle: uv_check_t, cb: uv_check_cb): CInt = extern
 
-  def uv_check_stop(handle: uv_check_t): Unit = extern
+  def uv_check_stop(handle: uv_check_t): CInt = extern
 
   //
   // uv_idle_t — Idle handle
@@ -126,7 +126,7 @@ object LibUV:
 
   def uv_idle_start(handle: uv_idle_t, cb: uv_idle_cb): CInt = extern
 
-  def uv_idle_stop(handle: uv_idle_t): Unit = extern
+  def uv_idle_stop(handle: uv_idle_t): CInt = extern
 
   //
   // uv_async_t — Async handle
