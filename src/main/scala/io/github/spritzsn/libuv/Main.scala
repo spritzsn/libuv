@@ -35,6 +35,7 @@ package io.github.spritzsn.libuv
            |hello world
            |""".stripMargin.getBytes,
       )
+      client.readStop
       client.shutdown
 
     client.readStart(readCallback)
