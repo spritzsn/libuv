@@ -226,16 +226,27 @@ package object libuv:
       free(buffer.asInstanceOf[Ptr[Byte]])
       free(req.asInstanceOf[Ptr[Byte]])
 
+  type ShutdownCallback = TCP => Unit
+
+  private val shutdownCallbacks = new mutable.HashMap[lib.uv_shutdown_t, ShutdownCallback]
+
   private val shutdownCallback: lib.uv_shutdown_cb =
     (req: lib.uv_shutdown_t, status: Int) =>
       val handle = (!req).asInstanceOf[lib.uv_tcp_t]
 
-      lib.uv_close(handle, closeCallback)
+      shutdownCallbacks(req)(handle)
+      shutdownCallbacks -= req
       free(req.asInstanceOf[Ptr[Byte]])
+
+  type CloseCallback = TCP => Unit
+
+  private val closeCallbacks = new mutable.HashMap[lib.uv_tcp_t, CloseCallback]
 
   private val closeCallback: lib.uv_close_cb =
     (handle: lib.uv_tcp_t) =>
       connectionCallbacks -= handle.toLong
+      closeCallbacks(handle)(handle)
+      closeCallbacks -= handle
       free(handle)
 
   implicit class TCP(val handle: lib.uv_tcp_t) extends AnyVal:
@@ -275,12 +286,15 @@ package object libuv:
       !req = buffer.asInstanceOf[Ptr[Byte]]
       checkError(lib.uv_write(req, handle, buffer, 1.toUInt, writeCallback), "uv_write")
 
-    def shutdown: Int =
+    def shutdown(cb: ShutdownCallback): Int =
       val req = malloc(lib.uv_req_size(ReqType.SHUTDOWN.value)).asInstanceOf[lib.uv_shutdown_t]
 
       !req = handle
+      shutdownCallbacks(req) = cb
       checkError(lib.uv_shutdown(req, handle, shutdownCallback), "uv_shutdown")
 
-    // todo: shutdown handles close automatically. could allow app code to supply a callback
+    def close(cb: CloseCallback): Unit =
+      closeCallbacks(handle) = cb
+      lib.uv_close(handle, closeCallback)
 
     def dispose(): Unit = free(handle)
