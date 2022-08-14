@@ -172,14 +172,49 @@ package object libuv:
       idleCallbacks -= handle
       free(handle)
 
+  implicit class Buffer(val buf: lib.uv_buf_t) extends AnyVal:
+    def apply(idx: Int): Int = buf._1(idx) & 0xff
+
+    def update(idx: Int, b: Int): Unit = buf._1(idx) = b.toByte
+
+    def alloc(size: Int): Unit =
+      val s = size.toUInt
+
+      buf._1 = malloc(s)
+      buf._2 = s
+
+    def dispose(): Unit = free(buf._1)
+
   type ConnectionCallback = (TCP, Int) => Unit
 
   private val connectionCallbacks = new mutable.HashMap[lib.uv_tcp_t, ConnectionCallback]
 
   private val connectionCallback: lib.uv_connection_cb = (tcp: lib.uv_tcp_t, status: CInt) =>
     connectionCallbacks(tcp)(tcp, status)
-  
-  val ALLOC_SIZE = 1024.toUInt
+
+  val ALLOC_SIZE: CUnsignedInt = 1024.toUInt
+
+  type AllocCallback = (TCP, Int, Buffer) => Unit
+
+  private val allocCallbacks = new mutable.HashMap[lib.uv_tcp_t, AllocCallback]
+
+  private val allocCallback: lib.uv_alloc_cb = (tcp: lib.uv_tcp_t, size: CSize, buf: lib.uv_buf_t) =>
+    allocCallbacks(tcp)(tcp, size.toInt, buf)
+
+  type ReadCallback = (TCP, Int, Buffer) => Unit
+
+  private val readCallbacks = new mutable.HashMap[lib.uv_tcp_t, ReadCallback]
+
+  private val readCallback: lib.uv_read_cb = (tcp: lib.uv_tcp_t, size: CSize, buf: lib.uv_buf_t) =>
+    readCallbacks(tcp)(tcp, size.toInt, buf)
+
+  private val writeCallback: lib.uv_read_cb =
+    (req: lib.uv_write_t, status: Int) =>
+      val buffer = (!req).asInstanceOf[Ptr[Buffer]]
+
+      free(buffer._1)
+      free(buffer.asInstanceOf[Ptr[Byte]])
+      free(req.asInstanceOf[Ptr[Byte]])
 
   implicit class TCP(val handle: lib.uv_tcp_t) extends AnyVal:
     def bind(ip: String, port: Int, flags: Int): Int = Zone { implicit z =>
@@ -195,6 +230,26 @@ package object libuv:
 
     def accept(client: TCP): Int = checkError(lib.uv_accept(handle, client), "uv_accept")
 
-    def readStart(alloc_cb: uv_alloc_cb, read_cb)
+    def readStart(alloc_cb: AllocCallback, read_cb: ReadCallback): Int =
+      allocCallbacks(handle) = alloc_db
+      readCallbacks(handle) = read_cb
+      checkError(lib.uv_read_start(handle, allocCallback, readCallback), "uv_read_start")
+
+    def readStop: Int =
+      allocCallbacks -= handle
+      readCallbacks -= handle
+
+    def write(data: collection.IndexedSeq[Byte]): Int =
+      val req = malloc(lib.uv_req_size(ReqType.WRITE)).asInstanceOf[lib.uv_write_t]
+      val buffer = malloc(sizeof[lib.uv_buf_t]).asInstanceOf[lib.uv_buf_tp]
+      val len = data.length.toUInt
+      val base = malloc(len)
+
+      for i <- data.indices do base(i) = data(i)
+
+      buffer._1 = data
+      buffer._2 = len
+      !req = buffer.asInstanceOf[Ptr[Byte]]
+      checkError(lib.uv_write(req, handle, buffer, 1, writeCallback), "uv_write")
 
     def dispose(): Unit = free(handle)
