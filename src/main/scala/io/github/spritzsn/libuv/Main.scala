@@ -1,6 +1,7 @@
-package io.github.spritzsn.libuv
+//package io.github.spritzsn.libuv
+//
+//@main def run(): Unit =
 
-@main def run(): Unit =
 //  println("wait")
 //
 //  var count = 0
@@ -17,29 +18,29 @@ package io.github.spritzsn.libuv
 //  )
 //  println(defaultLoop.run())
 
-  val server = defaultLoop.tcp
-
-  server.bind("0.0.0.0", 3000, 0)
-
-  def connectionCallback(handle: TCP, status: Int): Unit =
-    val client = defaultLoop.tcp
-
-    handle.accept(client)
-
-    def readCallback(client: TCP, size: Int, buf: Buffer): Unit =
-      client.write(
-        s"""HTTP/1.0 200 OK\r
-           |Content-Type: text/plain\r
-           |Content-Length: 12\r
-           |\r
-           |hello world
-           |""".stripMargin.getBytes,
-      )
-      client.readStop
-      client.shutdown
-
-    client.readStart(readCallback)
-
-  server.listen(100, connectionCallback)
-  println("listening")
-  defaultLoop.run()
+//  val server = defaultLoop.tcp
+//
+//  server.bind("0.0.0.0", 3000, 0)
+//
+//  def connectionCallback(handle: TCP, status: Int): Unit =
+//    val client = defaultLoop.tcp
+//
+//    handle.accept(client)
+//
+//    def readCallback(client: TCP, size: Int, buf: Buffer): Unit =
+//      client.write(
+//        s"""HTTP/1.0 200 OK\r
+//           |Content-Type: text/plain\r
+//           |Content-Length: 12\r
+//           |\r
+//           |hello world
+//           |""".stripMargin.getBytes,
+//      )
+//      client.readStop
+//      client.shutdown
+//
+//    client.readStart(readCallback)
+//
+//  server.listen(100, connectionCallback)
+//  println("listening")
+//  defaultLoop.run()
