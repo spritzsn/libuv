@@ -21,7 +21,7 @@ scalacOptions ++= Seq(
   "-language:existentials",
 )
 
-organization := "io.github.edadma"
+organization := "io.github.spritzsn"
 
 githubOwner := "edadma"
 
@@ -38,10 +38,6 @@ licenses := Seq("ISC" -> url("https://opensource.org/licenses/ISC"))
 homepage := Some(url("https://github.com/edadma/" + name.value))
 
 //libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.12" % "test"
-
-libraryDependencies ++= Seq(
-  "com.github.scopt" %%% "scopt" % "4.1.0",
-)
 
 publishMavenStyle := true
 
