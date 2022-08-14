@@ -198,21 +198,24 @@ package object libuv:
   private val connectionCallback: lib.uv_connection_cb = (tcp: lib.uv_tcp_t, status: CInt) =>
     connectionCallbacks(tcp)(tcp, checkError(status, "uv_connection_cb"))
 
-  val ALLOC_SIZE: CUnsignedInt = 1024.toUInt
-
-  type AllocCallback = (TCP, Int, Buffer) => Unit
-
-  private val allocCallbacks = new mutable.HashMap[lib.uv_tcp_t, AllocCallback]
+//  val ALLOC_SIZE: CUnsignedInt = 1024.toUInt
+//
+//  type AllocCallback = (TCP, Int, Buffer) => Unit
+//
+//  private val allocCallbacks = new mutable.HashMap[lib.uv_tcp_t, AllocCallback]
 
   private val allocCallback: lib.uv_alloc_cb = (tcp: lib.uv_tcp_t, size: CSize, buf: lib.uv_buf_tp) =>
-    allocCallbacks(tcp)(tcp, size.toInt, buf)
+//    allocCallbacks(tcp)(tcp, size.toInt, buf)
+    buf.alloc(size.toInt)
 
+//  type ReadCallback = (TCP, Int, Buffer) => Unit
   type ReadCallback = (TCP, Int, Buffer) => Unit
 
   private val readCallbacks = new mutable.HashMap[lib.uv_tcp_t, ReadCallback]
 
   private val readCallback: lib.uv_read_cb = (stream: lib.uv_stream_t, size: CSSize, buf: lib.uv_buf_tp) =>
     readCallbacks(stream)(stream, size.toInt, buf)
+    free(buf._1)
 
   private val writeCallback: lib.uv_write_cb =
     (req: lib.uv_write_t, status: Int) =>
@@ -246,13 +249,13 @@ package object libuv:
 
     def accept(client: TCP): Int = checkError(lib.uv_accept(handle, client.handle), "uv_accept")
 
-    def readStart(alloc_cb: AllocCallback, read_cb: ReadCallback): Int =
-      allocCallbacks(handle) = alloc_cb
+    def readStart( /*alloc_cb: AllocCallback,*/ read_cb: ReadCallback): Int =
+//      allocCallbacks(handle) = alloc_cb
       readCallbacks(handle) = read_cb
       checkError(lib.uv_read_start(handle, allocCallback, readCallback), "uv_read_start")
 
     def readStop: Int =
-      allocCallbacks -= handle
+//      allocCallbacks -= handle
       readCallbacks -= handle
       checkError(lib.uv_read_stop(handle), "uv_read_start")
 

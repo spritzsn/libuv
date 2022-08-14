@@ -22,12 +22,23 @@ package io.github.spritzsn.libuv
   server.bind("0.0.0.0", 3000, 0)
 
   def connectionCallback(handle: TCP, status: Int): Unit =
-    println(s"connection: $status")
-
     val client = defaultLoop.tcp
 
     handle.accept(client)
-    client.readStart((h, s, b) => b.alloc(1024), (h, s, b) => println(b.string(s)))
+
+    def readCallback(client: TCP, size: Int, buf: Buffer): Unit =
+      println(buf.string(size))
+      client.write(
+        s"""HTTP/1.0 200 OK\r
+           |Content-Type: text/plain\r
+           |Content-Length: 12\r
+           |\r
+           |hello world
+           |""".stripMargin.getBytes,
+      )
+      client.shutdown
+
+    client.readStart(readCallback)
 
   server.listen(100, connectionCallback)
   println("listening")
