@@ -172,8 +172,8 @@ package object libuv:
       idleCallbacks -= handle
       free(handle)
 
-  implicit class Buffer(val buf: lib.uv_buf_t) extends AnyVal:
-    def apply(idx: Int): Int = buf._1(idx) & 0xff
+  implicit class Buffer(val buf: lib.uv_buf_tp) extends AnyVal:
+//    def apply(idx: Int): Int = buf._1(idx.toULong) & 0xff
 
     def update(idx: Int, b: Int): Unit = buf._1(idx) = b.toByte
 
@@ -198,19 +198,19 @@ package object libuv:
 
   private val allocCallbacks = new mutable.HashMap[lib.uv_tcp_t, AllocCallback]
 
-  private val allocCallback: lib.uv_alloc_cb = (tcp: lib.uv_tcp_t, size: CSize, buf: lib.uv_buf_t) =>
+  private val allocCallback: lib.uv_alloc_cb = (tcp: lib.uv_tcp_t, size: CSize, buf: lib.uv_buf_tp) =>
     allocCallbacks(tcp)(tcp, size.toInt, buf)
 
   type ReadCallback = (TCP, Int, Buffer) => Unit
 
   private val readCallbacks = new mutable.HashMap[lib.uv_tcp_t, ReadCallback]
 
-  private val readCallback: lib.uv_read_cb = (tcp: lib.uv_tcp_t, size: CSize, buf: lib.uv_buf_t) =>
-    readCallbacks(tcp)(tcp, size.toInt, buf)
+  private val readCallback: lib.uv_read_cb = (stream: lib.uv_stream_t, size: CSSize, buf: lib.uv_buf_tp) =>
+    readCallbacks(stream)(stream, size.toInt, buf)
 
-  private val writeCallback: lib.uv_read_cb =
+  private val writeCallback: lib.uv_write_cb =
     (req: lib.uv_write_t, status: Int) =>
-      val buffer = (!req).asInstanceOf[Ptr[Buffer]]
+      val buffer = (!req).asInstanceOf[lib.uv_buf_tp]
 
       free(buffer._1)
       free(buffer.asInstanceOf[Ptr[Byte]])
@@ -228,9 +228,9 @@ package object libuv:
 
   implicit class TCP(val handle: lib.uv_tcp_t) extends AnyVal:
     def bind(ip: String, port: Int, flags: Int): Int = Zone { implicit z =>
-      val socketAddress: Ptr[Byte] = stackalloc[Byte](lib.SOCKADDR_IN_SIZE)
+      val socketAddress = stackalloc[Byte](extern.SOCKADDR_IN_SIZE).asInstanceOf[lib.sockaddr_inp]
 
-      checkError(lib.uv_ip4_addr(fromCString(ip), port, socketAddress), "uv_ip4_addr")
+      checkError(lib.uv_ip4_addr(toCString(ip), port, socketAddress), "uv_ip4_addr")
       checkError(lib.uv_tcp_bind(handle, socketAddress, flags), "uv_tcp_bind")
     }
 
@@ -238,34 +238,37 @@ package object libuv:
       connectionCallbacks(handle) = cb
       checkError(lib.uv_listen(handle, backlog, connectionCallback), "uv_tcp_listen")
 
-    def accept(client: TCP): Int = checkError(lib.uv_accept(handle, client), "uv_accept")
+    def accept(client: TCP): Int = checkError(lib.uv_accept(handle, client.handle), "uv_accept")
 
     def readStart(alloc_cb: AllocCallback, read_cb: ReadCallback): Int =
-      allocCallbacks(handle) = alloc_db
+      allocCallbacks(handle) = alloc_cb
       readCallbacks(handle) = read_cb
       checkError(lib.uv_read_start(handle, allocCallback, readCallback), "uv_read_start")
 
     def readStop: Int =
       allocCallbacks -= handle
       readCallbacks -= handle
+      checkError(lib.uv_read_stop(handle), "uv_read_start")
 
     def write(data: collection.IndexedSeq[Byte]): Int =
-      val req = malloc(lib.uv_req_size(ReqType.WRITE)).asInstanceOf[lib.uv_write_t]
+      val req = malloc(lib.uv_req_size(ReqType.WRITE.value)).asInstanceOf[lib.uv_write_t]
       val buffer = malloc(sizeof[lib.uv_buf_t]).asInstanceOf[lib.uv_buf_tp]
       val len = data.length.toUInt
       val base = malloc(len)
 
       for i <- data.indices do base(i) = data(i)
 
-      buffer._1 = data
+      buffer._1 = base
       buffer._2 = len
       !req = buffer.asInstanceOf[Ptr[Byte]]
-      checkError(lib.uv_write(req, handle, buffer, 1, writeCallback), "uv_write")
+      checkError(lib.uv_write(req, handle, buffer, 1.toUInt, writeCallback), "uv_write")
 
     def shutdown: Int =
-      val req = malloc(lib.uv_req_size(ReqType.SHUTDOWN)).asInstanceOf[lib.uv_shutdown_t]
+      val req = malloc(lib.uv_req_size(ReqType.SHUTDOWN.value)).asInstanceOf[lib.uv_shutdown_t]
 
       !req = handle
-      checkError(lib.uv_shutdown(req, client, shutdownCallback), "uv_shutdown")
+      checkError(lib.uv_shutdown(req, handle, shutdownCallback), "uv_shutdown")
+
+    // todo: shutdown handles close automatically. could allow app code to supply a callback
 
     def dispose(): Unit = free(handle)

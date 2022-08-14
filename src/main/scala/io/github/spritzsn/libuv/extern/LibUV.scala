@@ -7,9 +7,7 @@ import scala.scalanative.unsigned._
 @extern
 object LibUV:
 
-  val SOCKADDR_IN_SIZE: CUnsignedInt = 16.toUInt
-
-//
+  //
   // Version-checking macros and functions
   //
 
@@ -288,3 +286,5 @@ object LibUV:
   //  def uv_rwlock_wrlock(rwlock: RWLock): Unit = extern
   //
   //  def uv_rwlock_wrunlock(rwlock: RWLock): Unit = extern
+
+private[libuv] final val SOCKADDR_IN_SIZE: CUnsignedInt = 16.toUInt
