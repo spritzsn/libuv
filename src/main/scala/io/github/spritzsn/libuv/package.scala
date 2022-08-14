@@ -190,7 +190,7 @@ package object libuv:
   private val connectionCallbacks = new mutable.HashMap[lib.uv_tcp_t, ConnectionCallback]
 
   private val connectionCallback: lib.uv_connection_cb = (tcp: lib.uv_tcp_t, status: CInt) =>
-    connectionCallbacks(tcp)(tcp, status)
+    connectionCallbacks(tcp)(tcp, checkError(status, "uv_connection_cb"))
 
   val ALLOC_SIZE: CUnsignedInt = 1024.toUInt
 
