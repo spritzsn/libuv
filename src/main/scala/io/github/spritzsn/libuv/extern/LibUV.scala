@@ -7,7 +7,9 @@ import scala.scalanative.unsigned._
 @extern
 object LibUV:
 
-  //
+  val SOCKADDR_IN_SIZE: CUnsignedInt = 16.toUInt
+
+//
   // Version-checking macros and functions
   //
 

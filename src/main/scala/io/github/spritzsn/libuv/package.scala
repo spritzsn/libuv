@@ -102,6 +102,12 @@ package object libuv:
       checkError(lib.uv_idle_init(loop, idle), "uv_idle_init")
       idle
 
+    def tcp: TCP =
+      val tcp = malloc(lib.uv_handle_size(HandleType.TCP.value))
+
+      checkError(lib.uv_tcp_init(loop, tcp), "uv_tcp_init")
+      tcp
+
   def defaultLoop: Loop = lib.uv_default_loop
 
   private val timerCallbacks = new mutable.HashMap[lib.uv_timer_t, Timer => Unit]
@@ -165,3 +171,26 @@ package object libuv:
     def dispose(): Unit =
       idleCallbacks -= handle
       free(handle)
+
+  type ConnectionCallback = (TCP, Int) => Unit
+
+  private val connectionCallbacks = new mutable.HashMap[lib.uv_tcp_t, ConnectionCallback]
+
+  private val connectionCallback: lib.uv_connection_cb = (tcp: lib.uv_tcp_t, status: CInt) =>
+    connectionCallbacks(tcp)(tcp, status)
+
+  implicit class TCP(val handle: lib.uv_tcp_t) extends AnyVal:
+    def bind(ip: String, port: Int, flags: Int): Int = Zone { implicit z =>
+      val socketAddress: Ptr[Byte] = stackalloc[Byte](lib.SOCKADDR_IN_SIZE)
+
+      checkError(lib.uv_ip4_addr(fromCString(ip), port, socketAddress), "uv_ip4_addr")
+      checkError(lib.uv_tcp_bind(handle, socketAddress, flags), "uv_tcp_bind")
+    }
+
+    def listen(backlog: Int, cb: ConnectionCallback): Int =
+      connectionCallbacks(handle) = cb
+      checkError(lib.uv_listen(handle, backlog, connectionCallback), "uv_tcp_listen")
+
+    def accept(client: TCP): Int = checkError(lib.uv_accept(handle, client), "uv_accept")
+
+    def dispose(): Unit = free(handle)
