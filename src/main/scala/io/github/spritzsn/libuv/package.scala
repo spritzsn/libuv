@@ -233,7 +233,9 @@ package object libuv:
       free(req.asInstanceOf[Ptr[Byte]])
 
   private val closeCallback: lib.uv_close_cb =
-    (handle: lib.uv_tcp_t) => free(handle.asInstanceOf[Ptr[Byte]])
+    (handle: lib.uv_tcp_t) =>
+      connectionCallbacks -= handle
+      free(handle)
 
   implicit class TCP(val handle: lib.uv_tcp_t) extends AnyVal:
     def bind(ip: String, port: Int, flags: Int): Int = Zone { implicit z =>
