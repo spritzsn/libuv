@@ -27,7 +27,6 @@ package io.github.spritzsn.libuv
     handle.accept(client)
 
     def readCallback(client: TCP, size: Int, buf: Buffer): Unit =
-      println(buf.string(size))
       client.write(
         s"""HTTP/1.0 200 OK\r
            |Content-Type: text/plain\r
