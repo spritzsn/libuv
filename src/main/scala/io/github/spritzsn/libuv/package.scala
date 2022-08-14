@@ -173,7 +173,7 @@ package object libuv:
       free(handle)
 
   implicit class Buffer(val buf: lib.uv_buf_tp) extends AnyVal:
-//    def apply(idx: Int): Int = buf._1(idx.toULong) & 0xff
+    def apply(idx: Int): Int = !(buf._1 + idx) & 0xff
 
     def update(idx: Int, b: Int): Unit = buf._1(idx) = b.toByte
 
@@ -183,7 +183,13 @@ package object libuv:
       buf._1 = malloc(s)
       buf._2 = s
 
+    def size: Int = buf._2.toInt
+
     def dispose(): Unit = free(buf._1)
+
+    def data(len: Int = size): Seq[Int] = for i <- 0 until (len min size) yield apply(i)
+
+    def string(len: Int = size): String = data(len) map (_.toChar) mkString
 
   type ConnectionCallback = (TCP, Int) => Unit
 

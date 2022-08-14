@@ -27,6 +27,8 @@ package io.github.spritzsn.libuv
     val client = defaultLoop.tcp
 
     handle.accept(client)
+    client.readStart((h, s, b) => b.alloc(1024), (h, s, b) => println(b.string(s)))
 
   server.listen(100, connectionCallback)
+  println("listening")
   defaultLoop.run()
