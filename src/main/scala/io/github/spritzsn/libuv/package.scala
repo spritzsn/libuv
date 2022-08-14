@@ -54,6 +54,9 @@ package object libuv:
     final val RUN_ONCE = new RunMode(1)
     final val RUN_NOWAIT = new RunMode(2)
 
+  def checkError(v: Int, label: String): Int =
+    if v != 0 then sys.error(s"$label error: ${errName(v)}: ${strError(v)}") else v
+
   def version: Long = lib.uv_version.toLong
 
   def versionString: String = fromCString(lib.uv_version_string)
@@ -78,25 +81,25 @@ package object libuv:
     def timer: Timer =
       val timer = malloc(lib.uv_handle_size(HandleType.TIMER.value))
 
-      lib.uv_timer_init(loop, timer)
+      checkError(lib.uv_timer_init(loop, timer), "uv_timer_init")
       timer
 
     def prepare: Prepare =
       val prepare = malloc(lib.uv_handle_size(HandleType.PREPARE.value))
 
-      lib.uv_prepare_init(loop, prepare)
+      checkError(lib.uv_prepare_init(loop, prepare), "uv_prepare_init")
       prepare
 
     def check: Check =
       val check = malloc(lib.uv_handle_size(HandleType.CHECK.value))
 
-      lib.uv_check_init(loop, check)
+      checkError(lib.uv_check_init(loop, check), "uv_check_init")
       check
 
     def idle: Idle =
       val idle = malloc(lib.uv_handle_size(HandleType.IDLE.value))
 
-      lib.uv_idle_init(loop, idle)
+      checkError(lib.uv_idle_init(loop, idle), "uv_idle_init")
       idle
 
   def defaultLoop: Loop = lib.uv_default_loop
@@ -112,7 +115,10 @@ package object libuv:
 
     def stop: Int = lib.uv_timer_stop(handle)
 
-    def dispose(): Unit = free(handle)
+    def dispose(): Unit =
+      timerCallbacks -= handle
+      free(handle)
+
     // todo: add rest of timer methods
 
   private val prepareCallbacks = new mutable.HashMap[lib.uv_prepare_t, Prepare => Unit]
@@ -126,7 +132,9 @@ package object libuv:
 
     def stop: Int = lib.uv_prepare_stop(handle)
 
-    def dispose(): Unit = free(handle)
+    def dispose(): Unit =
+      prepareCallbacks -= handle
+      free(handle)
 
   private val checkCallbacks = new mutable.HashMap[lib.uv_check_t, Check => Unit]
 
@@ -139,7 +147,9 @@ package object libuv:
 
     def stop: Int = lib.uv_check_stop(handle)
 
-    def dispose(): Unit = free(handle)
+    def dispose(): Unit =
+      checkCallbacks -= handle
+      free(handle)
 
   private val idleCallbacks = new mutable.HashMap[lib.uv_idle_t, Idle => Unit]
 
@@ -152,4 +162,6 @@ package object libuv:
 
     def stop: Int = lib.uv_idle_stop(handle)
 
-    def dispose(): Unit = free(handle)
+    def dispose(): Unit =
+      idleCallbacks -= handle
+      free(handle)
