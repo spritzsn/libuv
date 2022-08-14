@@ -216,6 +216,16 @@ package object libuv:
       free(buffer.asInstanceOf[Ptr[Byte]])
       free(req.asInstanceOf[Ptr[Byte]])
 
+  private val shutdownCallback: lib.uv_shutdown_cb =
+    (req: lib.uv_shutdown_t, status: Int) =>
+      val handle = (!req).asInstanceOf[lib.uv_tcp_t]
+
+      lib.uv_close(handle, closeCallback)
+      free(req.asInstanceOf[Ptr[Byte]])
+
+  private val closeCallback: lib.uv_close_cb =
+    (handle: lib.uv_tcp_t) => free(handle.asInstanceOf[Ptr[Byte]])
+
   implicit class TCP(val handle: lib.uv_tcp_t) extends AnyVal:
     def bind(ip: String, port: Int, flags: Int): Int = Zone { implicit z =>
       val socketAddress: Ptr[Byte] = stackalloc[Byte](lib.SOCKADDR_IN_SIZE)
@@ -251,5 +261,11 @@ package object libuv:
       buffer._2 = len
       !req = buffer.asInstanceOf[Ptr[Byte]]
       checkError(lib.uv_write(req, handle, buffer, 1, writeCallback), "uv_write")
+
+    def shutdown: Int =
+      val req = malloc(lib.uv_req_size(ReqType.SHUTDOWN)).asInstanceOf[lib.uv_shutdown_t]
+
+      !req = handle
+      checkError(lib.uv_shutdown(req, client, shutdownCallback), "uv_shutdown")
 
     def dispose(): Unit = free(handle)
