@@ -1,4 +1,4 @@
-package io.github.edadma
+package io.github.spritzsn
 
 import scala.collection.mutable
 import scala.scalanative.unsafe.*

@@ -1,4 +1,4 @@
-package io.github.edadma.libuv.extern
+package io.github.spritzsn.libuv.extern
 
 import scala.scalanative.unsafe._
 import scala.scalanative.unsigned._

@@ -1,6 +1,6 @@
-package io.github.edadma.libuv
+package io.github.spritzsn.libuv
 
-@main def run(): Unit =
+@main def run(): Unit = ()
 //  println("wait")
 //
 //  var count = 0
@@ -16,5 +16,3 @@ package io.github.edadma.libuv
 //    500,
 //  )
 //  println(defaultLoop.run())
-
-  
