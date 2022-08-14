@@ -4,6 +4,7 @@ import scala.collection.mutable
 import scala.scalanative.unsafe.*
 import scala.scalanative.unsigned.*
 import scala.scalanative.libc.stdlib.*
+import java.util.IdentityHashMap
 
 package object libuv:
 
@@ -193,10 +194,10 @@ package object libuv:
 
   type ConnectionCallback = (TCP, Int) => Unit
 
-  private val connectionCallbacks = new mutable.HashMap[lib.uv_tcp_t, ConnectionCallback]
+  private val connectionCallbacks = new mutable.LongMap[ /*lib.uv_tcp_t,*/ ConnectionCallback]
 
   private val connectionCallback: lib.uv_connection_cb = (tcp: lib.uv_tcp_t, status: CInt) =>
-    connectionCallbacks(tcp)(tcp, checkError(status, "uv_connection_cb"))
+    connectionCallbacks(tcp.toLong)(tcp, checkError(status, "uv_connection_cb"))
 
 //  val ALLOC_SIZE: CUnsignedInt = 1024.toUInt
 //
@@ -234,7 +235,7 @@ package object libuv:
 
   private val closeCallback: lib.uv_close_cb =
     (handle: lib.uv_tcp_t) =>
-      connectionCallbacks -= handle
+      connectionCallbacks -= handle.toLong
       free(handle)
 
   implicit class TCP(val handle: lib.uv_tcp_t) extends AnyVal:
@@ -246,7 +247,7 @@ package object libuv:
     }
 
     def listen(backlog: Int, cb: ConnectionCallback): Int =
-      connectionCallbacks(handle) = cb
+      connectionCallbacks(handle.toLong) = cb
       checkError(lib.uv_listen(handle, backlog, connectionCallback), "uv_tcp_listen")
 
     def accept(client: TCP): Int = checkError(lib.uv_accept(handle, client.handle), "uv_accept")
