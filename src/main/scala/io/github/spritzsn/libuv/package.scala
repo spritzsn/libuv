@@ -178,6 +178,8 @@ package object libuv:
 
   private val connectionCallback: lib.uv_connection_cb = (tcp: lib.uv_tcp_t, status: CInt) =>
     connectionCallbacks(tcp)(tcp, status)
+  
+  val ALLOC_SIZE = 1024.toUInt
 
   implicit class TCP(val handle: lib.uv_tcp_t) extends AnyVal:
     def bind(ip: String, port: Int, flags: Int): Int = Zone { implicit z =>
@@ -192,5 +194,7 @@ package object libuv:
       checkError(lib.uv_listen(handle, backlog, connectionCallback), "uv_tcp_listen")
 
     def accept(client: TCP): Int = checkError(lib.uv_accept(handle, client), "uv_accept")
+
+    def readStart(alloc_cb: uv_alloc_cb, read_cb)
 
     def dispose(): Unit = free(handle)
