@@ -74,11 +74,23 @@ package object libuv:
 
   private val exitCallbacks = new mutable.HashMap[lib.uv_process_t, ExitCallback]
 
+  private val closeCallbackProcess: lib.uv_close_cb =
+    (handle: lib.uv_process_t) => ()
+//      val args = handle.asInstanceOf[Ptr[lib.uv_process_options_t]]._3
+//      var i = 0
+//
+//      while !(args + i) != null do
+//        free((args + i).asInstanceOf[Ptr[Byte]])
+//        i += 1
+//
+//      free(handle)
+
   private val exitCallback: lib.uv_exit_cb =
     (handle: lib.uv_process_t, exit_status: CLong, term_signal: CInt) =>
       exitCallbacks(handle)(exit_status.toInt, term_signal)
       exitCallbacks -= handle
-      lib.uv_close(handle, closeCallbackProcess)
+//      lib.uv_close(handle, closeCallbackProcess)
+      ()
 
   implicit class Loop(val loop: lib.uv_loop_t) extends AnyVal:
     def run(mode: RunMode = RunMode.RUN_DEFAULT): Int = lib.uv_run(loop, mode.value)
@@ -120,18 +132,19 @@ package object libuv:
       tcp
 
     def spawn(program: String, args: IndexedSeq[String], exit_cb: ExitCallback): Int =
-      val handle = stackalloc[Byte](lib.uv_handle_size(HandleType.PROCESS.value)).asInstanceOf[lib.uv_process_t]
+      val handle = stackalloc[Byte](lib.uv_handle_size(HandleType.PROCESS.value))
       val options = stackalloc[lib.uv_process_options_t]()
-      val argsArray = stackalloc[CString]((args.length + 1).toUInt)
+      val argsArray = stackalloc[CString]((args.length + 2).toUInt)
       val file = allocString(program)
 
       argsArray(0) = file
 
-      for i <- 1 to args.length do argsArray(i) = allocString(args(i))
+      for i <- 1 to args.length do argsArray(i) = allocString(args(i - 1))
 
+      argsArray(args.length + 1) = null
       options._1 = exitCallback
       options._2 = file
-      options._3 = argsArray.asInstanceOf[Ptr[CString]]
+      options._3 = argsArray
       exitCallbacks(handle) = exit_cb
 
       lib.uv_spawn(loop, handle, options)
@@ -325,17 +338,6 @@ package object libuv:
       lib.uv_close(handle, closeCallbackTCP)
 
     def dispose(): Unit = free(handle)
-
-  private val closeCallbackProcess: lib.uv_close_cb =
-    (handle: lib.uv_process_t) =>
-      val args = handle.asInstanceOf[Ptr[lib.uv_process_options_t]]._3
-      var i = 0
-
-      while !(args + i) != null do
-        free((args + i).asInstanceOf[Ptr[Byte]])
-        i += 1
-
-      free(handle)
 
   type ExitCallback = (Int, Int) => Unit
 
