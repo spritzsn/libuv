@@ -72,6 +72,14 @@ package object libuv:
     lib.uv_loop_init(loop)
     loop
 
+  private val exitCallbacks = new mutable.HashMap[lib.uv_process_t, ExitCallback]
+
+  private val exitCallback: lib.uv_exit_cb =
+    (handle: lib.uv_process_t, exit_status: CLong, term_signal: CInt) =>
+      exitCallbacks(handle)(exit_status.toInt, term_signal)
+      exitCallbacks -= handle
+      lib.uv_close(handle, closeCallbackProcess)
+
   implicit class Loop(val loop: lib.uv_loop_t) extends AnyVal:
     def run(mode: RunMode = RunMode.RUN_DEFAULT): Int = lib.uv_run(loop, mode.value)
 
@@ -110,6 +118,23 @@ package object libuv:
 
       checkError(lib.uv_tcp_init(loop, tcp), "uv_tcp_init")
       tcp
+
+    def spawn(program: String, args: IndexedSeq[String], exit_cb: ExitCallback): Int =
+      val handle = stackalloc[Byte](lib.uv_handle_size(HandleType.PROCESS.value)).asInstanceOf[lib.uv_process_t]
+      val options = stackalloc[lib.uv_process_options_t]()
+      val argsArray = stackalloc[CString]((args.length + 1).toUInt)
+      val file = allocString(program)
+
+      argsArray(0) = file
+
+      for i <- 1 to args.length do argsArray(i) = allocString(args(i))
+
+      options._1 = exitCallback
+      options._2 = file
+      options._3 = argsArray.asInstanceOf[Ptr[CString]]
+      exitCallbacks(handle) = exit_cb
+
+      lib.uv_spawn(loop, handle, options)
 
   def defaultLoop: Loop = lib.uv_default_loop
 
@@ -240,15 +265,15 @@ package object libuv:
       shutdownCallbacks -= req
       free(req.asInstanceOf[Ptr[Byte]])
 
-  type CloseCallback = TCP => Unit
+  type CloseCallbackTCP = TCP => Unit
 
-  private val closeCallbacks = new mutable.HashMap[lib.uv_tcp_t, CloseCallback]
+  private val closeCallbacksTCP = new mutable.HashMap[lib.uv_tcp_t, CloseCallbackTCP]
 
-  private val closeCallback: lib.uv_close_cb =
+  private val closeCallbackTCP: lib.uv_close_cb =
     (handle: lib.uv_tcp_t) =>
       connectionCallbacks -= handle.toLong
-      closeCallbacks(handle)(handle)
-      closeCallbacks -= handle
+      closeCallbacksTCP(handle)(handle)
+      closeCallbacksTCP -= handle
       free(handle)
 
   implicit class TCP(val handle: lib.uv_tcp_t) extends AnyVal:
@@ -295,8 +320,36 @@ package object libuv:
       shutdownCallbacks(req) = cb
       checkError(lib.uv_shutdown(req, handle, shutdownCallback), "uv_shutdown")
 
-    def close(cb: CloseCallback): Unit =
-      closeCallbacks(handle) = cb
-      lib.uv_close(handle, closeCallback)
+    def close(cb: CloseCallbackTCP): Unit =
+      closeCallbacksTCP(handle) = cb
+      lib.uv_close(handle, closeCallbackTCP)
 
     def dispose(): Unit = free(handle)
+
+  private val closeCallbackProcess: lib.uv_close_cb =
+    (handle: lib.uv_process_t) =>
+      val args = handle.asInstanceOf[Ptr[lib.uv_process_options_t]]._3
+      var i = 0
+
+      while !(args + i) != null do
+        free((args + i).asInstanceOf[Ptr[Byte]])
+        i += 1
+
+      free(handle)
+
+  type ExitCallback = (Int, Int) => Unit
+
+  implicit class Process(val proc: lib.uv_process_t) extends AnyVal
+
+  def allocString(s: String): CString =
+    val bytes = s.getBytes(scala.io.Codec.UTF8.charSet)
+    val cstr = malloc((bytes.length + 1).toULong)
+    var c = 0
+
+    while c < bytes.length do
+      !(cstr + c) = bytes(c)
+      c += 1
+
+    !(cstr + c) = 0.toByte
+    cstr
+  end allocString

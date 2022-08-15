@@ -18,29 +18,35 @@ package io.github.spritzsn.libuv
 //  )
 //  println(defaultLoop.run())
 
-  val server = defaultLoop.tcp
+//  val server = defaultLoop.tcp
+//
+//  server.bind("0.0.0.0", 3000, 0)
+//
+//  def connectionCallback(handle: TCP, status: Int): Unit =
+//    val client = defaultLoop.tcp
+//
+//    handle.accept(client)
+//
+//    def readCallback(client: TCP, size: Int, buf: Buffer): Unit =
+//      client.write(
+//        s"""HTTP/1.0 200 OK\r
+//           |Content-Type: text/plain\r
+//           |Content-Length: 12\r
+//           |\r
+//           |hello world
+//           |""".stripMargin.getBytes,
+//      )
+//      client.readStop
+//      client.shutdown(_.close(_ => ()))
+//
+//    client.readStart(readCallback)
+//
+//  server.listen(100, connectionCallback)
+//  println("listening")
+//  defaultLoop.run()
 
-  server.bind("0.0.0.0", 3000, 0)
+  def exitCallback(status: Int, signal: Int): Unit = println(status)
 
-  def connectionCallback(handle: TCP, status: Int): Unit =
-    val client = defaultLoop.tcp
+  for i <- 1 to 1 do defaultLoop.spawn("/home/ed/dev-sn/test/target/scala-3.1.3/test-out", Vector(), exitCallback)
 
-    handle.accept(client)
-
-    def readCallback(client: TCP, size: Int, buf: Buffer): Unit =
-      client.write(
-        s"""HTTP/1.0 200 OK\r
-           |Content-Type: text/plain\r
-           |Content-Length: 12\r
-           |\r
-           |hello world
-           |""".stripMargin.getBytes,
-      )
-      client.readStop
-      client.shutdown(_.close(_ => ()))
-
-    client.readStart(readCallback)
-
-  server.listen(100, connectionCallback)
-  println("listening")
   defaultLoop.run()
