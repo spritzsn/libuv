@@ -76,14 +76,15 @@ package object libuv:
 
   private val closeCallbackProcess: lib.uv_close_cb =
     (handle: lib.uv_process_t) =>
-      val options = !(handle.asInstanceOf[Ptr[lib.uv_process_options_tp]])
-//      val args: Ptr[CString] = options._3
-//      var i = 0
-//
-//      while !(args + i) != null do
-//        free((args + i).asInstanceOf[Ptr[Byte]])
-//        i += 1
+      val options: lib.uv_process_options_tp = !(handle.asInstanceOf[Ptr[lib.uv_process_options_tp]])
+      val args: Ptr[CString] = options._3
+      var i = 0
 
+      while !(args + i) != null do
+        free((!(args + i)).asInstanceOf[Ptr[Byte]])
+        i += 1
+
+      free(args.asInstanceOf[Ptr[Byte]])
       free(options.asInstanceOf[Ptr[Byte]])
       free(handle)
 
