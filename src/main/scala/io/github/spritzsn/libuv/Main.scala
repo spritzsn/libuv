@@ -1,6 +1,6 @@
-package io.github.spritzsn.libuv
-
-@main def run(): Unit =
+//package io.github.spritzsn.libuv
+//
+//@main def run(): Unit =
 
 //  println("wait")
 //
@@ -45,10 +45,9 @@ package io.github.spritzsn.libuv
 //  println("listening")
 //  defaultLoop.run()
 
-  def exitCallback(status: Int, signal: Int): Unit = println(status)
-
-  /*for i <- 1 to 1 do*/
-  defaultLoop.spawn("/home/ed/dev-sn/test/target/scala-3.1.3/test-out", Vector("3", "4"), exitCallback)
-  defaultLoop.spawn("/home/ed/dev-sn/test/target/scala-3.1.3/test-out", Vector("5", "6"), exitCallback)
-
-  defaultLoop.run()
+//  def exitCallback(status: Int, signal: Int): Unit = println(status)
+//
+//  for i <- 1 to 100 do
+//    defaultLoop.spawn("/home/ed/dev-sn/test/target/scala-3.1.3/test-out", Vector("3", i.toString), exitCallback)
+//
+//  defaultLoop.run()
