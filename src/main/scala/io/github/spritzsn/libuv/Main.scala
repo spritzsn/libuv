@@ -47,6 +47,8 @@ package io.github.spritzsn.libuv
 
   def exitCallback(status: Int, signal: Int): Unit = println(status)
 
-  for i <- 1 to 1 do defaultLoop.spawn("/home/ed/dev-sn/test/target/scala-3.1.3/test-out", Vector(), exitCallback)
+  /*for i <- 1 to 1 do*/
+  defaultLoop.spawn("/home/ed/dev-sn/test/target/scala-3.1.3/test-out", Vector(), exitCallback)
+  defaultLoop.spawn("/home/ed/dev-sn/test/target/scala-3.1.3/test-out", Vector(), exitCallback)
 
   defaultLoop.run()

@@ -150,6 +150,7 @@ object LibUV:
     CStruct10[uv_exit_cb, CString, Ptr[CString], Ptr[CString], CString, CUnsignedInt, CInt, Ptr[
       uv_stdio_container_t,
     ], CUnsignedInt, CUnsignedInt]
+  type uv_process_options_tp = Ptr[uv_process_options_t]
   type uv_exit_cb = CFuncPtr3[uv_process_t, CLong, CInt, Unit]
   type uv_process_flags = CInt
   type uv_stdio_container_t = CStruct2[CInt, Ptr[Byte]]
