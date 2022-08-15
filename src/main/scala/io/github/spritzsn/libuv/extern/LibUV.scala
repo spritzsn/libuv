@@ -43,6 +43,8 @@ object LibUV:
 
   def uv_now(loop: uv_loop_t): CLong = extern
 
+  def uv_loop_alive(loop: uv_loop_t): CInt = extern
+
   //
   // uv_handle_t — Base handle
   //

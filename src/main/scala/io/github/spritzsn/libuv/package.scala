@@ -75,6 +75,8 @@ package object libuv:
   implicit class Loop(val loop: lib.uv_loop_t) extends AnyVal:
     def run(mode: RunMode = RunMode.RUN_DEFAULT): Int = lib.uv_run(loop, mode.value)
 
+    def isAlive: Boolean = lib.uv_loop_alive(loop) > 0
+
     def updateTime(): Unit = lib.uv_update_time(loop)
 
     def now: Long = lib.uv_now(loop)
