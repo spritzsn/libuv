@@ -320,6 +320,10 @@ package object libuv:
       readCallbacks -= handle
       checkError(lib.uv_read_stop(handle), "uv_read_start")
 
+    def isReadable: Boolean = lib.uv_is_readable(handle) > 0
+
+    def isWritable: Boolean = lib.uv_is_writable(handle) > 0
+
     def write(data: collection.IndexedSeq[Byte]): Int =
       val req = malloc(lib.uv_req_size(ReqType.WRITE.value)).asInstanceOf[lib.uv_write_t]
       val buffer = malloc(sizeof[lib.uv_buf_t]).asInstanceOf[lib.uv_buf_tp]

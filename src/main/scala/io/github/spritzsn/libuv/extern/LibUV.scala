@@ -184,10 +184,13 @@ object LibUV:
       bufs: uv_buf_tp,
       nbufs: CUnsignedInt,
       db: uv_write_cb,
-  ): CInt =
-    extern
+  ): CInt = extern
 
   def uv_read_stop(handle: uv_stream_t): CInt = extern
+
+  def uv_is_readable(handle: uv_stream_t): CInt = extern
+
+  def uv_is_writable(handle: uv_stream_t): CInt = extern
 
   //
   // uv_tcp_t — TCP handle
