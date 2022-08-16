@@ -2,6 +2,8 @@ name := "libuv"
 
 version := "0.1.0-pre.6"
 
+versionScheme := Some("early-semver")
+
 scalaVersion := "3.1.3"
 
 enablePlugins(ScalaNativePlugin)
