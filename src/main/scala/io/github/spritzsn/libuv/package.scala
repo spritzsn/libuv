@@ -285,15 +285,14 @@ package object libuv:
       shutdownCallbacks -= req
       free(req.asInstanceOf[Ptr[Byte]])
 
-  type CloseCallbackTCP = TCP => Unit
-
-  private val closeCallbacksTCP = new mutable.HashMap[lib.uv_tcp_t, CloseCallbackTCP]
+//  type CloseCallbackTCP = TCP => Unit
+//
+//  private val closeCallbacksTCP = new mutable.HashMap[lib.uv_tcp_t, CloseCallbackTCP]
 
   private val closeCallbackTCP: lib.uv_close_cb =
     (handle: lib.uv_tcp_t) =>
-      connectionCallbacks -= handle.toLong
-      closeCallbacksTCP(handle)(handle)
-      closeCallbacksTCP -= handle
+//      closeCallbacksTCP(handle)(handle)
+//      closeCallbacksTCP -= handle
       free(handle)
 
   implicit class TCP(val handle: lib.uv_tcp_t) extends AnyVal:
@@ -344,9 +343,11 @@ package object libuv:
       shutdownCallbacks(req) = cb
       checkError(lib.uv_shutdown(req, handle, shutdownCallback), "uv_shutdown")
 
-    def close(cb: CloseCallbackTCP): Unit =
-      closeCallbacksTCP(handle) = cb
+    def close( /*cb: CloseCallbackTCP*/ ): Unit =
+//      closeCallbacksTCP(handle) = cb
       lib.uv_close(handle, closeCallbackTCP)
+
+    def isClosing: Boolean = lib.uv_is_closing(handle) > 0
 
     def dispose(): Unit = free(handle)
 
