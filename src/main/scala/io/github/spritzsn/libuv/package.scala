@@ -266,14 +266,14 @@ package object libuv:
 
   private val readCallback: lib.uv_read_cb = (stream: lib.uv_stream_t, size: CSSize, buf: lib.uv_buf_tp) =>
     readCallbacks(stream)(stream, size.toInt, buf)
-    free(buf._1)
+    if buf._1 != null then free(buf._1)
 
   private val writeCallback: lib.uv_write_cb =
     (req: lib.uv_write_t, status: Int) =>
-      val buffer = (!req).asInstanceOf[lib.uv_buf_tp]
+      val buf = (!req).asInstanceOf[lib.uv_buf_tp]
 
-      free(buffer._1)
-      free(buffer.asInstanceOf[Ptr[Byte]])
+      free(buf._1)
+      free(buf.asInstanceOf[Ptr[Byte]])
       free(req.asInstanceOf[Ptr[Byte]])
 
   type ShutdownCallback = TCP => Unit
