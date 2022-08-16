@@ -23,7 +23,7 @@ scalacOptions ++= Seq(
 
 organization := "io.github.spritzsn"
 
-githubOwner := "edadma"
+githubOwner := "spritzsn"
 
 githubRepository := name.value
 
