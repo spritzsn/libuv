@@ -10,6 +10,8 @@ package object libuv:
 
   import extern.{LibUV => lib}
 
+  def eof: Int = lib.uv_eof
+
   implicit class HandleType(val value: lib.uv_handle_type) extends AnyVal
 
   object HandleType:
@@ -233,7 +235,8 @@ package object libuv:
 
     def size: Int = buf._2.toInt
 
-    def dispose(): Unit = free(buf._1)
+    def dispose(): Unit =
+      if buf._1 != null then free(buf._1)
 
     def data(len: Int = size): Seq[Int] = for i <- 0 until (len min size) yield apply(i)
 

@@ -8,6 +8,12 @@ import scala.scalanative.unsigned._
 object LibUV:
 
   //
+  // macros
+  //
+
+  def uv_eof: CInt = extern
+
+  //
   // Version-checking macros and functions
   //
 
