@@ -57,6 +57,13 @@ package object libuv:
     final val RUN_ONCE = new RunMode(1)
     final val RUN_NOWAIT = new RunMode(2)
 
+  val O_RDONLY = 0
+  val O_WRONLY = 1
+  val O_RDWR = 2
+
+  val O_CREAT: Int = if sys.props("os.name") == "Mac OS X" then 512 else 64
+  val O_APPEND = 1024
+
   def checkError(v: Int, label: String): Int =
     if v != 0 then sys.error(s"$label error: ${errName(v)}: ${strError(v)}") else v
 
