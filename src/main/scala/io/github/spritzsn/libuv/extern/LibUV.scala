@@ -227,6 +227,8 @@ object LibUV:
 
   def uv_hrtime: CUnsignedLong = extern
 
+  def uv_os_gethostname(buffer: Ptr[CChar], size: Ptr[CSize]): CInt = extern
+
   //
   // File system operations
   //

@@ -1,6 +1,6 @@
-//package io.github.spritzsn.libuv
-//
-//@main def run(): Unit =
+package io.github.spritzsn.libuv
+
+@main def run(): Unit = println(getHostname)
 
 //  println("wait")
 //

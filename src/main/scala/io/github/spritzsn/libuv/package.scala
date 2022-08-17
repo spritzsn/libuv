@@ -70,6 +70,14 @@ package object libuv:
 
   def hrTime: Long = lib.uv_hrtime.toLong
 
+  def getHostname: String =
+    val buffer = stackalloc[CChar](256.toUInt)
+    val size = stackalloc[CSize]()
+
+    lib.uv_os_gethostname(buffer, size)
+    buffer(255) = 0.toByte
+    fromCString(buffer)
+
   def loopInit: Loop =
     val loop = malloc(lib.uv_loop_size)
 
