@@ -225,6 +225,47 @@ object LibUV:
 
   def uv_ip4_name(src: sockaddr_inp, dst: CString, size: CSize): CInt = extern
 
+  def uv_hrtime: CUnsignedLong = extern
+
+  //
+  // File system operations
+  //
+
+  type uv_fs_t = Ptr[Ptr[Byte]]
+  type uv_fs_cb = CFuncPtr1[uv_fs_t, Unit]
+
+  def uv_fs_open(loop: uv_loop_t, req: uv_fs_t, path: CString, flags: CInt, mode: CInt, cb: uv_fs_cb): CInt = extern
+
+  def uv_fs_read(
+      loop: uv_loop_t,
+      req: uv_fs_t,
+      file: CInt,
+      bufs: uv_buf_tp,
+      nbufs: CInt,
+      offset: Long,
+      cb: uv_fs_cb,
+  ): CInt =
+    extern
+
+  def uv_fs_write(
+      loop: uv_loop_t,
+      req: uv_fs_t,
+      file: CInt,
+      bufs: uv_buf_tp,
+      nbufs: CInt,
+      offset: Long,
+      cb: uv_fs_cb,
+  ): CInt =
+    extern
+
+  def uv_fs_close(loop: uv_loop_t, req: uv_fs_t, fd: CInt, cb: uv_fs_cb): CInt = extern
+
+  def uv_fs_req_cleanup(req: uv_fs_t): Unit = extern
+
+  def uv_fs_get_result(req: uv_fs_t): CInt = extern
+
+  def uv_fs_get_ptr(req: uv_fs_t): Ptr[Byte] = extern
+
   //
 
   type PollHandle = Ptr[Ptr[Byte]]
@@ -249,41 +290,6 @@ object LibUV:
   def uv_poll_stop(handle: PollHandle): CInt = extern
 
   def uv_guess_handle(fd: CInt): CInt = extern
-
-  type FSReq = Ptr[Ptr[Byte]]
-  type FSCB = CFuncPtr1[FSReq, Unit]
-
-  def uv_fs_open(loop: uv_loop_t, req: FSReq, path: CString, flags: CInt, mode: CInt, cb: FSCB): CInt = extern
-
-  def uv_fs_read(
-      loop: uv_loop_t,
-      req: FSReq,
-      fd: CInt,
-      bufs: uv_buf_tp,
-      numBufs: CInt,
-      offset: Long,
-      fsCB: FSCB,
-  ): CInt =
-    extern
-
-  def uv_fs_write(
-      loop: uv_loop_t,
-      req: FSReq,
-      fd: CInt,
-      bufs: uv_buf_tp,
-      numBufs: CInt,
-      offset: Long,
-      fsCB: FSCB,
-  ): CInt =
-    extern
-
-  def uv_fs_close(loop: uv_loop_t, req: FSReq, fd: CInt, fsCB: FSCB): CInt = extern
-
-  def uv_req_cleanup(req: FSReq): Unit = extern
-
-  def uv_fs_get_result(req: FSReq): CInt = extern
-
-  def uv_fs_get_ptr(req: FSReq): Ptr[Byte] = extern
 
   //  def uv_queue_work(loop: uv_loop_t, req: WorkReq, work_cb: WorkCB, after_work_cb: AfterWorkCB): CInt = extern
   //

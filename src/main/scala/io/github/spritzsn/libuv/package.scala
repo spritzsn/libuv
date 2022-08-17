@@ -68,6 +68,8 @@ package object libuv:
 
   def errName(err: Int): String = fromCString(lib.uv_err_name(err))
 
+  def hrTime: Long = lib.uv_hrtime.toLong
+
   def loopInit: Loop =
     val loop = malloc(lib.uv_loop_size)
 
