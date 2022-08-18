@@ -57,7 +57,7 @@ object LibUV:
 
   type uv_handle_t = Ptr[Byte]
   type uv_handle_type = CInt
-  type uv_alloc_cb = CFuncPtr3[uv_handle_t, CSize, uv_buf_tp, Unit]
+  type uv_alloc_cb = CFuncPtr3[uv_handle_t, CSize, uv_buf_t, Unit]
 
   def uv_is_active(handle: uv_handle_t): CInt = extern
 
@@ -172,7 +172,7 @@ object LibUV:
   type uv_shutdown_t = Ptr[Ptr[Byte]]
   type uv_write_t = Ptr[Ptr[Byte]]
   type uv_connection_cb = CFuncPtr2[uv_stream_t, CInt, Unit]
-  type uv_read_cb = CFuncPtr3[uv_stream_t, CSSize, uv_buf_tp, Unit]
+  type uv_read_cb = CFuncPtr3[uv_stream_t, CSSize, uv_buf_t, Unit]
   type uv_write_cb = CFuncPtr2[uv_write_t, Int, Unit]
   type uv_shutdown_cb = CFuncPtr2[uv_shutdown_t, Int, Unit]
 
@@ -187,7 +187,7 @@ object LibUV:
   def uv_write(
       req: uv_write_t,
       handle: uv_stream_t,
-      bufs: uv_buf_tp,
+      bufs: uv_buf_t,
       nbufs: CUnsignedInt,
       db: uv_write_cb,
   ): CInt = extern
@@ -241,7 +241,7 @@ object LibUV:
       loop: uv_loop_t,
       req: uv_fs_t,
       file: CInt,
-      bufs: uv_buf_tp,
+      bufs: uv_buf_t,
       nbufs: CInt,
       offset: Long,
       cb: uv_fs_cb,
@@ -252,7 +252,7 @@ object LibUV:
       loop: uv_loop_t,
       req: uv_fs_t,
       file: CInt,
-      bufs: uv_buf_tp,
+      bufs: uv_buf_t,
       nbufs: CInt,
       offset: Long,
       cb: uv_fs_cb,
