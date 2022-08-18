@@ -1,11 +1,17 @@
 package io.github.spritzsn.libuv
 
 @main def run(): Unit =
-  def cb(req: FileReq): Unit =
+  def opencb(req: FileReq): Unit =
     if req.getResult < 0 then println(strError(req.getResult))
-    else println(req.getResult)
+    else
+      val fd = req.getResult
 
-  defaultLoop.open("asdf", O_RDWR, 0, cb)
+      def readcb(req: FileReq): Unit =
+        println(req.getResult)
+
+      defaultLoop.read(fd, readcb)
+
+  defaultLoop.open("asdf", O_RDWR, 0, opencb)
   defaultLoop.run()
 
 //  println("wait")
