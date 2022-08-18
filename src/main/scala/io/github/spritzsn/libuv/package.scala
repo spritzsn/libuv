@@ -329,9 +329,9 @@ package object libuv:
       buf
 
   implicit class Buffer(val buf: lib.uv_buf_t) extends AnyVal:
-    private def baseptr = (buf + (if platform == Platform.Win then 0 else 4)).asInstanceOf[Ptr[Ptr[Byte]]]
+    private def baseptr = (buf + (if platform == Platform.Win then 8 else 0)).asInstanceOf[Ptr[Ptr[Byte]]]
 
-    private def lenptr = (buf + (if platform == Platform.Win then 4 else 0)).asInstanceOf[Ptr[CSize]]
+    private def lenptr = (buf + (if platform == Platform.Win then 0 else 8)).asInstanceOf[Ptr[CSize]]
 
     def apply(idx: Int): Byte = !(!baseptr + idx)
 
@@ -369,6 +369,8 @@ package object libuv:
 
     def string(len: Int = size, codec: Codec = Codec.UTF8): String = new String(read(), codec.charSet)
 
+    override def toString: String = s"[Buffer: ${string()}]"
+
   type ConnectionCallback = (TCP, Int) => Unit
 
   private val connectionCallbacks = new mutable.LongMap[ /*lib.uv_tcp_t,*/ ConnectionCallback]
@@ -383,7 +385,7 @@ package object libuv:
 //  private val allocCallbacks = new mutable.HashMap[lib.uv_tcp_t, AllocCallback]
 
   private val allocCallback: lib.uv_alloc_cb = (tcp: lib.uv_tcp_t, size: CSize, buf: lib.uv_buf_t) =>
-    buf.asInstanceOf[Buffer].alloc(size)
+    new Buffer(buf).alloc(size)
 
   type ReadCallback = (TCP, Int, Buffer) => Unit
 
@@ -391,11 +393,11 @@ package object libuv:
 
   private val readCallback: lib.uv_read_cb = (stream: lib.uv_stream_t, size: CSSize, buf: lib.uv_buf_t) =>
     readCallbacks(stream)(stream, size.toInt, buf)
-    buf.asInstanceOf[Buffer].freebase() // todo should buf also be freed?
+    new Buffer(buf).freebase()
 
   private val writeCallback: lib.uv_write_cb =
     (req: lib.uv_write_t, status: Int) =>
-      val buf = (!req).asInstanceOf[Buffer]
+      val buf = new Buffer(!req)
 
       buf.dispose()
       free(req.asInstanceOf[Ptr[Byte]])
