@@ -1,12 +1,12 @@
-//package io.github.spritzsn.libuv
-//
-//@main def run(): Unit =
-//  def cb(req: FileReq): Unit =
-//    if req.getResult < 0 then println(strError(req.getResult))
-//    else println(req.getResult)
-//
-//  defaultLoop.open("asdf", O_RDWR, 0, cb)
-//  defaultLoop.run()
+package io.github.spritzsn.libuv
+
+@main def run(): Unit =
+  def cb(req: FileReq): Unit =
+    if req.getResult < 0 then println(strError(req.getResult))
+    else println(req.getResult)
+
+  defaultLoop.open("asdf", O_RDWR, 0, cb)
+  defaultLoop.run()
 
 //  println("wait")
 //

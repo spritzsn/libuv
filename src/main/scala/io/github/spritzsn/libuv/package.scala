@@ -238,18 +238,12 @@ package object libuv:
         checkError(lib.uv_fs_open(loop, req, toCString(path), flags, mode, fileCallback), "uv_fs_open")
       }
 
-//    def uv_fs_read(
-//                    loop: uv_loop_t,
-//                    req: uv_fs_t,
-//                    file: CInt,
-//                    bufs: uv_buf_t,
-//                    nbufs: CInt,
-//                    offset: Long,
-//                    cb: uv_fs_cb,
-//                  ): Int =
-//      val req = allocfs
-//
-//      checkError(lib.uv_fs_read(loop, req, file, )
+    def read(                    file: Int,                    cb: FileReq => Unit                  ): Int =
+      val req = allocfs
+      val buf = Buffer(4096)
+
+      fileCallbacks(req) = cb
+      checkError(lib.uv_fs_read(loop, req, file,buf.buf, 1, -1, fileCallback ), "uv_fs_read")
 
   end Loop
 
