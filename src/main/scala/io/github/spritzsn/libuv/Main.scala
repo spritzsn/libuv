@@ -1,6 +1,7 @@
 package io.github.spritzsn.libuv
 
-@main def run(): Unit = println(getHostname)
+@main def run(): Unit =
+  defaultLoop.open("asdf", O_CREAT|O_RDWR, )
 
 //  println("wait")
 //

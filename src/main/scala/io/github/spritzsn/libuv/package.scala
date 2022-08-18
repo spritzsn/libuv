@@ -64,6 +64,38 @@ package object libuv:
   val O_CREAT: Int = if sys.props("os.name") == "Mac OS X" then 512 else 64
   val O_APPEND = 1024
 
+  private def o(n: Int): Int = Integer.parseInt(n.toString, 8)
+
+  val S_IRWXU: Int = o(700)
+
+  val S_IRUSR: Int = o(00400) //  user has read permission
+
+  val S_IWUSR: Int = o(00200) //  user has write permission
+
+  val S_IXUSR: Int = o(00100) //  user has execute permission
+
+  val S_IRWXG: Int = o(00070) //  group has read, write, and execute permission
+
+  val S_IRGRP: Int = o(00040) //  group has read permission
+
+  val S_IWGRP: Int = o(00020) //  group has write permission
+
+  val S_IXGRP: Int = o(00010) //  group has execute permission
+
+  val S_IRWXO: Int = o(00007) //  others have read, write, and execute permission
+
+  val S_IROTH: Int = o(00004) //  others have read permission
+
+  val S_IWOTH: Int = o(00002) //  others have write permission
+
+  val S_IXOTH: Int = o(00001) //  others have execute permission
+
+  val S_ISUID: Int = o(0004000) //  set-user-ID bit
+
+  val S_ISGID: Int = o(0002000) //  set-group-ID bit (see inode(7)).
+
+  val S_ISVTX: Int = o(0001000) //  sticky bit (see inode(7)).
+
   def checkError(v: Int, label: String): Int =
     if v != 0 then sys.error(s"$label error: ${errName(v)}: ${strError(v)}") else v
 
