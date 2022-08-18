@@ -113,7 +113,7 @@ package object libuv:
       exitCallbacks -= handle
       lib.uv_close(handle, closeCallbackProcess)
 
-  private val fileCallbacks = new mutable.HashMap[lib.uv_fs_t, File => Unit]
+  private val fileCallbacks = new mutable.HashMap[lib.uv_fs_t, FileReq => Unit]
 
   private def fileCallback(req: lib.uv_fs_t): Unit =
     fileCallbacks(req)(req)
@@ -192,7 +192,7 @@ package object libuv:
       val req = allocfs
 
       Zone { implicit z =>
-        checkError(lib.uv_fs_open(loop, req, toCString(path), flags, mode, openCallback), "uv_fs_open")
+        checkError(lib.uv_fs_open(loop, req, toCString(path), flags, mode, fileCallback), "uv_fs_open")
       }
 
   end Loop
