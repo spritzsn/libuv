@@ -106,8 +106,9 @@ package object libuv:
 
   val S_ISVTX: Int = o(1000) //  sticky bit (see inode(7)).
 
-  def checkError(v: Int, label: String): Int =
-    if v < 0 then sys.error(s"$label error: ${errName(v)}: ${strError(v)}") else v
+  def errorMessage(v: Int, label: String): String = s"$label error: ${errName(v)}: ${strError(v)}"
+
+  def checkError(v: Int, label: String): Int = if v < 0 then sys.error(errorMessage(v, label)) else v
 
   def version: Long = lib.uv_version.toLong
 
