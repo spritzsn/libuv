@@ -113,6 +113,14 @@ package object libuv:
       exitCallbacks -= handle
       lib.uv_close(handle, closeCallbackProcess)
 
+  private val fileCallbacks = new mutable.HashMap[lib.uv_fs_t, File => Unit]
+
+  private def fileCallback(req: lib.uv_fs_t): Unit =
+    fileCallbacks(req)(req)
+    fileCallbacks -= req
+    lib.uv_fs_req_cleanup(req)
+    free(req.asInstanceOf[Ptr[Byte]])
+
   implicit class Loop(val loop: lib.uv_loop_t) extends AnyVal:
     def run(mode: RunMode = RunMode.RUN_DEFAULT): Int = lib.uv_run(loop, mode.value)
 
@@ -174,6 +182,22 @@ package object libuv:
       exitCallbacks(handle) = exit_cb
 
       lib.uv_spawn(loop, handle, options)
+
+    def open(
+        path: String,
+        flags: Int,
+        mode: Int,
+        cb: lib.uv_fs_cb,
+    ): Int =
+      val req = allocfs
+
+      Zone { implicit z =>
+        checkError(lib.uv_fs_open(loop, req, toCString(path), flags, mode, openCallback), "uv_fs_open")
+      }
+
+  end Loop
+
+  private def allocfs = malloc(lib.uv_req_size(ReqType.FS.value)).asInstanceOf[lib.uv_fs_t]
 
   def defaultLoop: Loop = lib.uv_default_loop
 
@@ -387,3 +411,8 @@ package object libuv:
     !(cstr + c) = 0.toByte
     cstr
   end allocString
+
+  implicit class File(val file: lib.uv_file) extends AnyVal
+
+  implicit class FileReq(val req: lib.uv_fs_t) extends AnyVal:
+    def getResult: Long = lib.uv_fs_get_result(req)
