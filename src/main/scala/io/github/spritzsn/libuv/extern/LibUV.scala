@@ -212,8 +212,7 @@ object LibUV:
   // Miscellaneous utilities
   //
 
-  type uv_buf_t = CStruct2[Ptr[Byte], CSize]
-  type uv_buf_tp = Ptr[uv_buf_t]
+  type uv_buf_t = Ptr[Byte]
   type uv_file = CInt
   type uv_os_fd_t = CInt
   type uv_os_fd_tp = Ptr[uv_os_fd_t]

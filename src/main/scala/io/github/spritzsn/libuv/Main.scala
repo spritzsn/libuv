@@ -5,7 +5,7 @@ package io.github.spritzsn.libuv
     if req.getResult < 0 then println(strError(req.getResult))
     else println(req.getResult)
 
-  defaultLoop.open("asdf", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR, cb)
+  defaultLoop.open("asdf", O_RDWR, 0, cb)
   defaultLoop.run()
 
 //  println("wait")

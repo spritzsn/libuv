@@ -5,8 +5,18 @@ import scala.scalanative.unsafe.*
 import scala.scalanative.unsigned.*
 import scala.scalanative.libc.stdlib.*
 import java.util.IdentityHashMap
+import scala.io.Codec
 
 package object libuv:
+
+  enum Platform:
+    case Nix, Mac, Win, Other
+
+  val platform: Platform =
+    if sys.props("os.name").startsWith("Mac") then Platform.Mac
+    else if sys.props("os.name").startsWith("Windows") then Platform.Win
+    else if sys.props("os.name").startsWith("Linux") then Platform.Nix
+    else Platform.Other
 
   import extern.{LibUV => lib}
 
@@ -228,7 +238,20 @@ package object libuv:
         checkError(lib.uv_fs_open(loop, req, toCString(path), flags, mode, fileCallback), "uv_fs_open")
       }
 
-  end Loop
+    def uv_fs_read(
+                    loop: uv_loop_t,
+                    req: uv_fs_t,
+                    file: CInt,
+                    bufs: uv_buf_t,
+                    nbufs: CInt,
+                    offset: Long,
+                    cb: uv_fs_cb,
+                  ): Int =
+      val req = allocfs
+
+      checkError(lib.uv_fs_read(loop, req, file, )
+
+      end Loop
 
   private def allocfs = malloc(lib.uv_req_size(ReqType.FS.value)).asInstanceOf[lib.uv_fs_t]
 
@@ -296,25 +319,57 @@ package object libuv:
       idleCallbacks -= handle
       free(handle)
 
-  implicit class Buffer(val buf: lib.uv_buf_tp) extends AnyVal:
-    def apply(idx: Int): Int = !(buf._1 + idx) & 0xff
+  object Buffer:
+    def apply(size: Int): Buffer =
+      val buf: Buffer = malloc(16.toUInt)
+      val base = malloc(size.toUInt)
 
-    def update(idx: Int, b: Int): Unit = buf._1(idx) = b.toByte
+      !buf.baseptr = base
+      !buf.lenptr = size
+      buf
 
-    def alloc(size: Int): Unit =
-      val s = size.toUInt
+  implicit class Buffer(val buf: lib.uv_buf_t) extends AnyVal:
+    private def baseptr: Ptr[Ptr[Byte]] = buf + (if platform == Platform.Win then 0 else 4)
 
-      buf._1 = malloc(s)
-      buf._2 = s
+    private def lenptr: Ptr[CInt] = buf + (if platform == Platform.Win then 4 else 0)
 
-    def size: Int = buf._2.toInt
+    def apply(idx: Int): Int = !(!baseptr + idx) & 0xff
+
+    def update(idx: Int, b: Int): Unit = !(!baseptr + idx) = b.toByte
+
+//    def alloc(size: Int): Unit =
+//      val s = size.toUInt
+//
+//      buf._1 = malloc(s)
+//      buf._2 = s
+
+    def size: Int = !lenptr.toInt
+
+    def freebase(): Unit = if baseptr != null then free(baseptr)
 
     def dispose(): Unit =
-      if buf._1 != null then free(buf._1)
+      freebase()
+      free(buf)
 
-    def data(len: Int = size): Seq[Int] = for i <- 0 until (len min size) yield apply(i)
+    def read(len: Int = size): Array[Byte] =
+      val arr = new Array(size)
+      var i = 0
 
-    def string(len: Int = size): String = data(len) map (_.toChar) mkString
+      while i < size do
+        arr(i) = apply(i)
+        i += 1
+
+      arr
+
+    def write(data: collection.IndexedSeq[Byte]): Unit =
+      val base = !baseptr
+      var i = 0
+
+      while i < size do
+        base(i) = data(i)
+        i += 1
+
+    def string(len: Int = size, codec: Codec = Codec.UTF8): String = new String(arr, codec)
 
   type ConnectionCallback = (TCP, Int) => Unit
 
@@ -338,16 +393,15 @@ package object libuv:
 
   private val readCallbacks = new mutable.HashMap[lib.uv_tcp_t, ReadCallback]
 
-  private val readCallback: lib.uv_read_cb = (stream: lib.uv_stream_t, size: CSSize, buf: lib.uv_buf_tp) =>
+  private val readCallback: lib.uv_read_cb = (stream: lib.uv_stream_t, size: CSSize, buf: Buffer) =>
     readCallbacks(stream)(stream, size.toInt, buf)
-    if buf._1 != null then free(buf._1)
+    buf.freebase() // todo should buf also be freed?
 
   private val writeCallback: lib.uv_write_cb =
     (req: lib.uv_write_t, status: Int) =>
-      val buf = (!req).asInstanceOf[lib.uv_buf_tp]
+      val buf = (!req).asInstanceOf[Buffer]
 
-      free(buf._1)
-      free(buf.asInstanceOf[Ptr[Byte]])
+      buf.dispose()
       free(req.asInstanceOf[Ptr[Byte]])
 
   type ShutdownCallback = TCP => Unit
@@ -402,15 +456,10 @@ package object libuv:
 
     def write(data: collection.IndexedSeq[Byte]): Int =
       val req = malloc(lib.uv_req_size(ReqType.WRITE.value)).asInstanceOf[lib.uv_write_t]
-      val buffer = malloc(sizeof[lib.uv_buf_t]).asInstanceOf[lib.uv_buf_tp]
-      val len = data.length.toUInt
-      val base = malloc(len)
+      val buffer = Buffer(data.length)
 
-      for i <- data.indices do base(i) = data(i)
-
-      buffer._1 = base
-      buffer._2 = len
-      !req = buffer.asInstanceOf[Ptr[Byte]]
+      buffer.write(data)
+      !req = buffer.buf
       checkError(lib.uv_write(req, handle, buffer, 1.toUInt, writeCallback), "uv_write")
 
     def shutdown(cb: ShutdownCallback): Int =
