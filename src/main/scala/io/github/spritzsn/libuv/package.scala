@@ -155,10 +155,10 @@ package object libuv:
       exitCallbacks -= handle
       lib.uv_close(handle, closeCallbackProcess)
 
-  private val fileCallbacks = new mutable.HashMap[lib.uv_fs_t, FileReq => Unit]
+  private val fileCallbacks = new mutable.HashMap[lib.uv_fs_t, File => Unit]
 
   private def fileCallback(req: lib.uv_fs_t): Unit =
-    fileCallbacks(req)(req)
+    fileCallbacks get req foreach (_(req))
     fileCallbacks -= req
     lib.uv_fs_req_cleanup(req)
     free(req.asInstanceOf[Ptr[Byte]])
@@ -229,7 +229,7 @@ package object libuv:
         path: String,
         flags: Int,
         mode: Int,
-        cb: FileReq => Unit,
+        cb: File => Unit,
     ): Int =
       val req = allocfs
 
@@ -238,12 +238,20 @@ package object libuv:
         checkError(lib.uv_fs_open(loop, req, toCString(path), flags, mode, fileCallback), "uv_fs_open")
       }
 
-    def read(file: Int, cb: FileReq => Unit): Int =
+    def read(file: Int, cb: File => Unit): Int =
       val req = allocfs
       val buf = Buffer(4096)
 
       fileCallbacks(req) = cb
+      !req = buf.buf
       checkError(lib.uv_fs_read(loop, req, file, buf.buf, 1, -1, fileCallback), "uv_fs_read")
+
+    def close(file: Int): Int =
+      val req = allocfs
+      val buf = Buffer(4096)
+
+      !req = buf.buf
+      checkError(lib.uv_fs_close(loop, req, file, fileCallback), "uv_fs_close")
 
   end Loop
 
@@ -343,11 +351,18 @@ package object libuv:
       freebase()
       free(buf)
 
-    def read(len: Int = size): Array[Byte] =
-      val arr = new Array[Byte](size)
+    def read(buf: scala.collection.mutable.Buffer[Byte], len: Int): Unit =
       var i = 0
 
-      while i < size do
+      while i < len do
+        buf += apply(i)
+        i += 1
+
+    def read(len: Int): Array[Byte] =
+      val arr = new Array[Byte](len)
+      var i = 0
+
+      while i < len do
         arr(i) = apply(i)
         i += 1
 
@@ -361,9 +376,7 @@ package object libuv:
         base(i) = data(i)
         i += 1
 
-    def string(len: Int = size, codec: Codec = Codec.UTF8): String = new String(read(), codec.charSet)
-
-    override def toString: String = s"[Buffer: ${string()}]"
+    def string(len: Int, codec: Codec = Codec.UTF8): String = new String(read(len), codec.charSet)
 
   type ConnectionCallback = (TCP, Int) => Unit
 
@@ -486,7 +499,7 @@ package object libuv:
     cstr
   end allocString
 
-  implicit class File(val file: lib.uv_file) extends AnyVal
-
-  implicit class FileReq(val req: lib.uv_fs_t) extends AnyVal:
+  implicit class File(val req: lib.uv_fs_t) extends AnyVal:
     def getResult: Int = lib.uv_fs_get_result(req).toInt
+
+    def buffer: Buffer = !req

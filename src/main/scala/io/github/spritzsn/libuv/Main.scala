@@ -1,18 +1,24 @@
-package io.github.spritzsn.libuv
-
-@main def run(): Unit =
-  def opencb(req: FileReq): Unit =
-    if req.getResult < 0 then println(strError(req.getResult))
-    else
-      val fd = req.getResult
-
-      def readcb(req: FileReq): Unit =
-        println(req.getResult)
-
-      defaultLoop.read(fd, readcb)
-
-  defaultLoop.open("asdf", O_RDWR, 0, opencb)
-  defaultLoop.run()
+//package io.github.spritzsn.libuv
+//
+//@main def run(): Unit =
+//  def opencb(req: File): Unit =
+//    val openres = req.getResult
+//
+//    if openres < 0 then println(strError(openres))
+//    else
+//      def readcb(req: File): Unit =
+//        val res = req.getResult
+//
+//        if res < 0 then println(strError(res))
+//        else if res > 0 then
+//          print(req.buffer.string(req.getResult))
+//          defaultLoop.read(openres, readcb)
+//        else defaultLoop.close(openres)
+//
+//      defaultLoop.read(openres, readcb)
+//
+//  defaultLoop.open("src/main/scala/io/github/spritzsn/libuv/package.scala", O_RDWR, 0, opencb)
+//  defaultLoop.run()
 
 //  println("wait")
 //

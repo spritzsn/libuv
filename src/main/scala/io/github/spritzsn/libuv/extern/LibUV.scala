@@ -259,13 +259,15 @@ object LibUV:
   ): CInt =
     extern
 
-  def uv_fs_close(loop: uv_loop_t, req: uv_fs_t, fd: CInt, cb: uv_fs_cb): CInt = extern
+  def uv_fs_close(loop: uv_loop_t, req: uv_fs_t, file: CInt, cb: uv_fs_cb): CInt = extern
 
   def uv_fs_req_cleanup(req: uv_fs_t): Unit = extern
 
   def uv_fs_get_result(req: uv_fs_t): CSSize = extern
 
   def uv_fs_get_ptr(req: uv_fs_t): Ptr[Byte] = extern
+
+  def uv_fs_get_type(req: uv_fs_t): CInt /*uv_fs_type*/ = extern
 
   //
 
