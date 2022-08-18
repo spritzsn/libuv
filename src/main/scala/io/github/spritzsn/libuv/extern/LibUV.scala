@@ -264,7 +264,7 @@ object LibUV:
 
   def uv_fs_req_cleanup(req: uv_fs_t): Unit = extern
 
-  def uv_fs_get_result(req: uv_fs_t): CInt = extern
+  def uv_fs_get_result(req: uv_fs_t): CSSize = extern
 
   def uv_fs_get_ptr(req: uv_fs_t): Ptr[Byte] = extern
 

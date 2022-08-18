@@ -219,11 +219,12 @@ package object libuv:
         path: String,
         flags: Int,
         mode: Int,
-        cb: lib.uv_fs_cb,
+        cb: FileReq => Unit,
     ): Int =
       val req = allocfs
 
       Zone { implicit z =>
+        fileCallbacks(req) = cb
         checkError(lib.uv_fs_open(loop, req, toCString(path), flags, mode, fileCallback), "uv_fs_open")
       }
 
@@ -447,4 +448,4 @@ package object libuv:
   implicit class File(val file: lib.uv_file) extends AnyVal
 
   implicit class FileReq(val req: lib.uv_fs_t) extends AnyVal:
-    def getResult: Long = lib.uv_fs_get_result(req)
+    def getResult: Int = lib.uv_fs_get_result(req).toInt
