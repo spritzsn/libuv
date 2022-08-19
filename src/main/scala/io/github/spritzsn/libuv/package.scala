@@ -234,8 +234,8 @@ package object libuv:
     ): Int =
       val req = allocfs
 
+      fileCallbacks(req) = cb
       Zone { implicit z =>
-        fileCallbacks(req) = cb
         checkError(lib.uv_fs_open(loop, req, toCString(path), flags, mode, fileCallback), "uv_fs_open")
       }
 
@@ -249,9 +249,7 @@ package object libuv:
 
     def close(file: Int): Int =
       val req = allocfs
-      val buf = Buffer(4096)
 
-      !req = buf.buf
       checkError(lib.uv_fs_close(loop, req, file, fileCallback), "uv_fs_close")
 
   end Loop
