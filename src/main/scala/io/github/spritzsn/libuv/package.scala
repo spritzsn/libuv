@@ -249,6 +249,14 @@ package object libuv:
       !req = buf.buf
       checkError(lib.uv_fs_read(loop, req, file, buf.buf, 1, -1, fileCallback), "uv_fs_read")
 
+    def write(data: collection.IndexedSeq[Byte], file: Int, cb: File => Unit): Int =
+      val req = allocfs
+      val buf = Buffer(data.length)
+
+      fileCallbacks(req) = cb
+      !req = buf.buf
+      checkError(lib.uv_fs_read(loop, req, file, buf.buf, 1, -1, fileCallback), "uv_fs_read")
+
     def close(file: Int): Int =
       val req = allocfs
 
