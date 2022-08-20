@@ -1,8 +1,11 @@
 package io.github.spritzsn.libuv
 
 @main def run(): Unit =
+  val data = "one\ntwo\n".getBytes
+
   def opencb(req: File): Unit =
     val openres = req.getResult
+    var idx = 0
 
     if openres < 0 then println(strError(openres))
     else
@@ -11,11 +14,11 @@ package io.github.spritzsn.libuv
 
         if res < 0 then println(strError(res))
         else if res > 0 then
-          print(req.getResult)
-//          defaultLoop.read(openres, readcb)
+          idx += res
+          defaultLoop.write(data, idx, openres, writecb)
         else defaultLoop.close(openres)
 
-      defaultLoop.write(Vector("one\ntwo\n".getBytes), openres, writecb)
+      defaultLoop.write(data, 0, openres, writecb)
 
   defaultLoop.open("asdf", O_WRONLY|O_CREAT, 0, opencb)
   defaultLoop.run()

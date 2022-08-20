@@ -249,11 +249,11 @@ package object libuv:
       !req = buf.buf
       checkError(lib.uv_fs_read(loop, req, file, buf.buf, 1, -1, fileCallback), "uv_fs_read")
 
-    def write(data: collection.IndexedSeq[Byte], file: Int, cb: File => Unit): Int =
+    def write(data: collection.IndexedSeq[Byte], offset: Int, file: Int, cb: File => Unit): Int =
       val req = allocfs
       val buf = Buffer(data.length)
 
-      buf.write(data)
+      buf.write(data, offset)
       fileCallbacks(req) = cb
       !req = buf.buf
       checkError(lib.uv_fs_write(loop, req, file, buf.buf, 1, -1, fileCallback), "uv_fs_write")
@@ -378,13 +378,15 @@ package object libuv:
 
       arr
 
-    def write(data: collection.IndexedSeq[Byte]): Unit =
+    def write(data: collection.IndexedSeq[Byte], offset: Int): Unit =
       val base = !baseptr
       var i = 0
+      var j = offset
 
       while i < size do
-        base(i) = data(i)
+        base(i) = data(j)
         i += 1
+        j += 1
 
     def string(len: Int, codec: Codec = Codec.UTF8): String = new String(read(len), codec.charSet)
 
@@ -473,7 +475,7 @@ package object libuv:
       val req = malloc(lib.uv_req_size(ReqType.WRITE.value)).asInstanceOf[lib.uv_write_t]
       val buffer = Buffer(data.length)
 
-      buffer.write(data)
+      buffer.write(data, 0)
       !req = buffer.buf
       checkError(lib.uv_write(req, handle, buffer.buf, 1.toUInt, writeCallback), "uv_write")
 
