@@ -262,7 +262,6 @@ package object libuv:
       val req = allocfs
 
       checkError(lib.uv_fs_close(loop, req, file, fileCallback), "uv_fs_close")
-
   end Loop
 
   private def allocfs = malloc(lib.uv_req_size(ReqType.FS.value)).asInstanceOf[lib.uv_fs_t]
