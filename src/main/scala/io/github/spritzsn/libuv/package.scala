@@ -253,9 +253,10 @@ package object libuv:
       val req = allocfs
       val buf = Buffer(data.length)
 
+      buf.write(data)
       fileCallbacks(req) = cb
       !req = buf.buf
-      checkError(lib.uv_fs_read(loop, req, file, buf.buf, 1, -1, fileCallback), "uv_fs_read")
+      checkError(lib.uv_fs_write(loop, req, file, buf.buf, 1, -1, fileCallback), "uv_fs_write")
 
     def close(file: Int): Int =
       val req = allocfs
