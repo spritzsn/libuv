@@ -13,9 +13,11 @@ package object libuv:
     case Nix, Mac, Win, Other
 
   val platform: Platform =
-    if sys.props("os.name").startsWith("Mac") then Platform.Mac
-    else if sys.props("os.name").startsWith("Windows") then Platform.Win
-    else if sys.props("os.name").startsWith("Linux") then Platform.Nix
+    val os = sys.props("os.name").toLowerCase
+
+    if os.startsWith("mac") then Platform.Mac
+    else if os.startsWith("windows") then Platform.Win
+    else if os.startsWith("linux") | os.contains("unix") | os.contains("bsd") then Platform.Nix
     else Platform.Other
 
   import extern.{LibUV => lib}
