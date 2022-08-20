@@ -1,28 +1,28 @@
-package io.github.spritzsn.libuv
-
-@main def run(): Unit =
-  val data = "one\ntwo\n".getBytes
-
-  def opencb(req: File): Unit =
-    val openres = req.getResult
-    var idx = 0
-    val len = data.length
-
-    if openres < 0 then println(strError(openres))
-    else
-      def writecb(req: File): Unit =
-        val res = req.getResult
-
-        if res < 0 then println(strError(res))
-        else if idx + res < len then
-          idx += res
-          defaultLoop.write(data, idx, openres, writecb)
-        else defaultLoop.close(openres)
-
-      defaultLoop.write(data, 0, openres, writecb)
-
-  defaultLoop.open("asdf", O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR, opencb)
-  defaultLoop.run()
+//package io.github.spritzsn.libuv
+//
+//@main def run(): Unit =
+//  val data = "one\ntwo\n".getBytes
+//
+//  def opencb(req: File): Unit =
+//    val openres = req.getResult
+//    var idx = 0
+//    val len = data.length
+//
+//    if openres < 0 then println(strError(openres))
+//    else
+//      def writecb(req: File): Unit =
+//        val res = req.getResult
+//
+//        if res < 0 then println(strError(res))
+//        else if idx + res < len then
+//          idx += res
+//          defaultLoop.write(data, idx, openres, writecb)
+//        else defaultLoop.close(openres)
+//
+//      defaultLoop.write(data, 0, openres, writecb)
+//
+//  defaultLoop.open("asdf", O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR, opencb)
+//  defaultLoop.run()
 
 //  println("wait")
 //

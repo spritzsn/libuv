@@ -158,7 +158,7 @@ package object libuv:
       exitCallbacks -= handle
       lib.uv_close(handle, closeCallbackProcess)
 
-  private val fileCallbacks = new mutable.HashMap[lib.uv_fs_t, File => Unit]
+  private val fileCallbacks = new mutable.HashMap[lib.uv_fs_t, FileReq => Unit]
 
   private def fileCallback(req: lib.uv_fs_t): Unit =
     fileCallbacks get req foreach (_(req))
@@ -229,10 +229,10 @@ package object libuv:
       lib.uv_spawn(loop, handle, options)
 
     def open(
-        path: String,
-        flags: Int,
-        mode: Int,
-        cb: File => Unit,
+              path: String,
+              flags: Int,
+              mode: Int,
+              cb: FileReq => Unit,
     ): Int =
       val req = allocfs
 
@@ -241,7 +241,7 @@ package object libuv:
         checkError(lib.uv_fs_open(loop, req, toCString(path), flags, mode, fileCallback), "uv_fs_open")
       }
 
-    def read(file: Int, cb: File => Unit): Int =
+    def read(file: Int, cb: FileReq => Unit): Int =
       val req = allocfs
       val buf = Buffer(4096)
 
@@ -249,7 +249,7 @@ package object libuv:
       !req = buf.buf
       checkError(lib.uv_fs_read(loop, req, file, buf.buf, 1, -1, fileCallback), "uv_fs_read")
 
-    def write(data: collection.IndexedSeq[Byte], offset: Int, file: Int, cb: File => Unit): Int =
+    def write(data: collection.IndexedSeq[Byte], offset: Int, file: Int, cb: FileReq => Unit): Int =
       val req = allocfs
       val buf = Buffer(data.length)
 
@@ -510,7 +510,7 @@ package object libuv:
     cstr
   end allocString
 
-  implicit class File(val req: lib.uv_fs_t) extends AnyVal:
+  implicit class FileReq(val req: lib.uv_fs_t) extends AnyVal:
     def getResult: Int = lib.uv_fs_get_result(req).toInt
 
     def buffer: Buffer = !req
