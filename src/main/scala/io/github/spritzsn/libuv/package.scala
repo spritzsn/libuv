@@ -76,6 +76,7 @@ package object libuv:
   val O_CREAT: Int = if sys.props("os.name") == "Mac OS X" then 0x200 else 0x40
   val O_APPEND = 0x400
   val O_SYNC = 0x101000
+  val O_DSYNC = 0x1000
 
   private def o(n: Int): Int = Integer.parseInt(n.toString, 8)
 
