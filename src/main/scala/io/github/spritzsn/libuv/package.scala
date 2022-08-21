@@ -81,34 +81,25 @@ package object libuv:
   private def o(n: Int): Int = Integer.parseInt(n.toString, 8)
 
   val S_IRWXU: Int = o(700)
-
   val S_IRUSR: Int = o(400) //  user has read permission
-
   val S_IWUSR: Int = o(200) //  user has write permission
-
   val S_IXUSR: Int = o(100) //  user has execute permission
-
   val S_IRWXG: Int = o(70) //  group has read, write, and execute permission
-
   val S_IRGRP: Int = o(40) //  group has read permission
-
   val S_IWGRP: Int = o(20) //  group has write permission
-
   val S_IXGRP: Int = o(10) //  group has execute permission
-
   val S_IRWXO: Int = 7 //  others have read, write, and execute permission
-
   val S_IROTH: Int = 4 //  others have read permission
-
   val S_IWOTH: Int = 2 //  others have write permission
-
   val S_IXOTH: Int = 1 //  others have execute permission
-
   val S_ISUID: Int = o(4000) //  set-user-ID bit
-
   val S_ISGID: Int = o(2000) //  set-group-ID bit (see inode(7)).
-
   val S_ISVTX: Int = o(1000) //  sticky bit (see inode(7)).
+
+  val UV_READABLE = 1
+  val UV_WRITABLE = 2
+  val UV_DISCONNECT = 4
+  val UV_PRIORITIZED = 8
 
   def errorMessage(v: Int, label: String): String = s"$label error: ${errName(v)}: ${strError(v)}"
 
@@ -166,6 +157,13 @@ package object libuv:
     fileCallbacks get req foreach (_(req))
     fileCallbacks -= req
     lib.uv_fs_req_cleanup(req)
+    free(req.asInstanceOf[Ptr[Byte]])
+
+  private val pollCallbacks = new mutable.HashMap[lib.uv_poll_t, (Int, Int) => Unit]
+
+  private def pollCallback(req: lib.uv_poll_t, status: CInt, events: CInt): Unit =
+    pollCallbacks get req foreach (_(status, events))
+    pollCallbacks -= req
     free(req.asInstanceOf[Ptr[Byte]])
 
   implicit class Loop(val loop: lib.uv_loop_t) extends AnyVal:
@@ -264,6 +262,12 @@ package object libuv:
       val req = allocfs
 
       checkError(lib.uv_fs_close(loop, req, file, fileCallback), "uv_fs_close")
+
+    def poll(fd: Int): Int =
+      val handle = malloc(lib.uv_handle_size(HandleType.POLL.value)).asInstanceOf[lib.uv_poll_t]
+
+      checkError(lib.uv_poll_init(loop, handle, fd), "uv_poll_init")
+
   end Loop
 
   private def allocfs = malloc(lib.uv_req_size(ReqType.FS.value)).asInstanceOf[lib.uv_fs_t]

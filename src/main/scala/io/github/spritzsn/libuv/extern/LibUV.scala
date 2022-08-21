@@ -148,6 +148,21 @@ object LibUV:
   def uv_async_send(handle: uv_async_t): CInt = extern
 
   //
+  // uv_poll_t — Poll handle
+  //
+
+  type uv_poll_t = Ptr[Ptr[Byte]]
+  type uv_poll_cb = CFuncPtr3[uv_poll_t, CInt, CInt, Unit]
+
+  def uv_poll_init(loop: uv_loop_t, handle: uv_poll_t, fd: CInt): CInt = extern
+
+  def uv_poll_init_socket(loop: uv_loop_t, handle: uv_poll_t, socket: Ptr[Byte]): CInt = extern
+
+  def uv_poll_start(handle: uv_poll_t, events: CInt, cb: uv_poll_cb): CInt = extern
+
+  def uv_poll_stop(handle: uv_poll_t): CInt = extern
+
+  //
   // uv_process_t — Process handle
   //
 
@@ -271,10 +286,8 @@ object LibUV:
 
   //
 
-  type PollHandle = Ptr[Ptr[Byte]]
   type TTYHandle = Ptr[Byte]
   type Connection = Ptr[Byte]
-  type PollCB = CFuncPtr3[PollHandle, Int, Int, Unit]
 
   type RWLock = Ptr[Byte]
 
@@ -285,12 +298,6 @@ object LibUV:
   def uv_pipe_open(handle: uv_stream_t, fd: CInt): CInt = extern
 
   def uv_pipe_bind(handle: uv_stream_t, socketName: CString): CInt = extern
-
-  def uv_poll_init_socket(loop: uv_loop_t, handle: PollHandle, socket: Ptr[Byte]): CInt = extern
-
-  def uv_poll_start(handle: PollHandle, events: CInt, cb: PollCB): CInt = extern
-
-  def uv_poll_stop(handle: PollHandle): CInt = extern
 
   def uv_guess_handle(fd: CInt): CInt = extern
 
