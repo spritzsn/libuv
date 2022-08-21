@@ -73,8 +73,9 @@ package object libuv:
   val O_WRONLY = 1
   val O_RDWR = 2
 
-  val O_CREAT: Int = if sys.props("os.name") == "Mac OS X" then 512 else 64
-  val O_APPEND = 1024
+  val O_CREAT: Int = if sys.props("os.name") == "Mac OS X" then 0x200 else 0x40
+  val O_APPEND = 0x400
+  val O_SYNC = 0x101000
 
   private def o(n: Int): Int = Integer.parseInt(n.toString, 8)
 
@@ -229,10 +230,10 @@ package object libuv:
       lib.uv_spawn(loop, handle, options)
 
     def open(
-              path: String,
-              flags: Int,
-              mode: Int,
-              cb: FileReq => Unit,
+        path: String,
+        flags: Int,
+        mode: Int,
+        cb: FileReq => Unit,
     ): Int =
       val req = allocfs
 
