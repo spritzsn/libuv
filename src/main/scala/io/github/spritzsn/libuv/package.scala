@@ -159,12 +159,12 @@ package object libuv:
     lib.uv_fs_req_cleanup(req)
     free(req.asInstanceOf[Ptr[Byte]])
 
-  private val pollCallbacks = new mutable.HashMap[lib.uv_poll_t, (Int, Int) => Unit]
+  private val pollCallbacks = new mutable.HashMap[lib.uv_poll_t, (Poll, Int, Int) => Unit]
 
-  private def pollCallback(req: lib.uv_poll_t, status: CInt, events: CInt): Unit =
-    pollCallbacks get req foreach (_(status, events))
-    pollCallbacks -= req
-    free(req.asInstanceOf[Ptr[Byte]])
+  private def pollCallback(handle: lib.uv_poll_t, status: CInt, events: CInt): Unit =
+    pollCallbacks get handle foreach (_(handle, status, events))
+    pollCallbacks -= handle
+    free(handle.asInstanceOf[Ptr[Byte]])
 
   implicit class Loop(val loop: lib.uv_loop_t) extends AnyVal:
     def run(mode: RunMode = RunMode.RUN_DEFAULT): Int = lib.uv_run(loop, mode.value)
@@ -337,7 +337,7 @@ package object libuv:
       free(handle)
 
   implicit class Poll(val handle: lib.uv_poll_t) extends AnyVal:
-    def start(events: Int, callback: (Int, Int) => Unit): Int =
+    def start(events: Int, callback: (Poll, Int, Int) => Unit): Int =
       pollCallbacks(handle) = callback
       lib.uv_poll_start(handle, events, pollCallback)
 
