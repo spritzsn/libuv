@@ -163,8 +163,6 @@ package object libuv:
 
   private def pollCallback(handle: lib.uv_poll_t, status: CInt, events: CInt): Unit =
     pollCallbacks get handle foreach (_(handle, status, events))
-    pollCallbacks -= handle
-    free(handle.asInstanceOf[Ptr[Byte]])
 
   implicit class Loop(val loop: lib.uv_loop_t) extends AnyVal:
     def run(mode: RunMode = RunMode.RUN_DEFAULT): Int = lib.uv_run(loop, mode.value)
