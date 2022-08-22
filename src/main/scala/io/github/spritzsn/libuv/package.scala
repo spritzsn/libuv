@@ -336,6 +336,17 @@ package object libuv:
       idleCallbacks -= handle
       free(handle)
 
+  implicit class Poll(val handle: lib.uv_poll_t) extends AnyVal:
+    def start(events: Int, callback: (Int, Int) => Unit): Int =
+      pollCallbacks(handle) = callback
+      lib.uv_poll_start(handle, events, pollCallback)
+
+    def stop: Int = lib.uv_poll_stop(handle)
+
+    def dispose(): Unit =
+      pollCallbacks -= handle
+      free(handle.asInstanceOf[Ptr[Byte]])
+
   object Buffer:
     def apply(size: Int): Buffer =
       val buf: Buffer = malloc(16.toUInt)
