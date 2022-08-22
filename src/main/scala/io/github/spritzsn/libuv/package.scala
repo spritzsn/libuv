@@ -263,11 +263,11 @@ package object libuv:
 
       checkError(lib.uv_fs_close(loop, req, file, fileCallback), "uv_fs_close")
 
-    def poll(fd: Int): Int =
+    def poll(fd: Int): Poll =
       val handle = malloc(lib.uv_handle_size(HandleType.POLL.value)).asInstanceOf[lib.uv_poll_t]
 
       checkError(lib.uv_poll_init(loop, handle, fd), "uv_poll_init")
-
+      handle
   end Loop
 
   private def allocfs = malloc(lib.uv_req_size(ReqType.FS.value)).asInstanceOf[lib.uv_fs_t]

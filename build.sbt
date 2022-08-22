@@ -1,6 +1,6 @@
 name := "libuv"
 
-version := "0.0.11"
+version := "0.0.12"
 
 versionScheme := Some("early-semver")
 
