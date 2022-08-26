@@ -147,8 +147,10 @@ package object libuv:
 
   private val exitCallback: lib.uv_exit_cb =
     (handle: lib.uv_process_t, exit_status: CLong, term_signal: CInt) =>
-      exitCallbacks(handle)(exit_status.toInt, term_signal)
-      exitCallbacks -= handle
+      exitCallbacks get handle foreach { cb =>
+        cb(exit_status.toInt, term_signal)
+        exitCallbacks -= handle
+      }
       lib.uv_close(handle, closeCallbackProcess)
 
   private val fileCallbacks = new mutable.HashMap[lib.uv_fs_t, FileReq => Unit]
@@ -203,7 +205,7 @@ package object libuv:
       checkError(lib.uv_tcp_init(loop, tcp), "uv_tcp_init")
       tcp
 
-    def spawn(program: String, args: IndexedSeq[String], exit_cb: ExitCallback): Int =
+    def spawn(program: String, args: IndexedSeq[String], exit_cb: ExitCallback = null): Int =
       val handle = malloc(lib.uv_handle_size(HandleType.PROCESS.value))
       val options = malloc(sizeof[lib.uv_process_options_t]).asInstanceOf[lib.uv_process_options_tp]
 
@@ -222,8 +224,7 @@ package object libuv:
       options._1 = exitCallback
       options._2 = file
       options._3 = argsArray
-      exitCallbacks(handle) = exit_cb
-
+      if exit_cb != null then exitCallbacks(handle) = exit_cb
       lib.uv_spawn(loop, handle, options)
 
     def open(

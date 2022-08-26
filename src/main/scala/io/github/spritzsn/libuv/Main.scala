@@ -1,6 +1,9 @@
 //package io.github.spritzsn.libuv
 //
 //@main def run(): Unit =
+//  defaultLoop.spawn("sleep", Vector("3"))
+//  defaultLoop.run()
+
 //  val data = "one\ntwo\n".getBytes
 //
 //  def opencb(req: File): Unit =
