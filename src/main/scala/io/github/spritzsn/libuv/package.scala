@@ -169,6 +169,10 @@ package object libuv:
     lib.uv_fs_req_cleanup(req)
     free(req.asInstanceOf[Ptr[Byte]])
 
+  private def fileCallbackWithDispose(req: lib.uv_fs_t): Unit =
+    fileCallback(req)
+    req.buffer.dispose()
+
   private val pollCallbacks = new mutable.HashMap[lib.uv_poll_t, (Poll, Int, Int) => Unit]
 
   private def pollCallback(handle: lib.uv_poll_t, status: CInt, events: CInt): Unit =
@@ -254,7 +258,7 @@ package object libuv:
 
       fileCallbacks(req) = cb
       !req = buf.buf
-      checkError(lib.uv_fs_read(loop, req, file, buf.buf, 1, -1, fileCallback), "uv_fs_read")
+      checkError(lib.uv_fs_read(loop, req, file, buf.buf, 1, -1, fileCallbackWithDispose), "uv_fs_read")
 
     def write(data: collection.IndexedSeq[Byte], offset: Int, file: Int, cb: FileReq => Unit): Int =
       val req = allocfs
@@ -263,7 +267,7 @@ package object libuv:
       buf.write(data, offset)
       fileCallbacks(req) = cb
       !req = buf.buf
-      checkError(lib.uv_fs_write(loop, req, file, buf.buf, 1, -1, fileCallback), "uv_fs_write")
+      checkError(lib.uv_fs_write(loop, req, file, buf.buf, 1, -1, fileCallbackWithDispose), "uv_fs_write")
 
     def close(file: Int, cb: FileReq => Unit): Int =
       val req = allocfs
