@@ -170,8 +170,10 @@ package object libuv:
     free(req.asInstanceOf[Ptr[Byte]])
 
   private def fileCallbackWithDispose(req: lib.uv_fs_t): Unit =
+    val buf = req.buffer
+
     fileCallback(req)
-    req.buffer.dispose()
+    buf.dispose()
 
   private val pollCallbacks = new mutable.HashMap[lib.uv_poll_t, (Poll, Int, Int) => Unit]
 
