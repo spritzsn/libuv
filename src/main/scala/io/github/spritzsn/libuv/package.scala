@@ -472,7 +472,7 @@ package object libuv:
       checkError(lib.uv_tcp_bind(handle, socketAddress, flags), "uv_tcp_bind")
     }
 
-    def getsockname: String =
+    def getSockName: String =
       val sockaddr = stackalloc[Byte](lib.uv_sockaddr_storage_size).asInstanceOf[lib.sockaddrp]
       val namelen = stackalloc[CInt]()
 
@@ -483,7 +483,7 @@ package object libuv:
       checkError(lib.uv_ip4_name(sockaddr, dst, 100.toUInt), "uv_ip4_name")
       fromCString(dst)
 
-    def getpeername: String =
+    def getPeerName: String =
       val sockaddr = stackalloc[Byte](lib.uv_sockaddr_storage_size).asInstanceOf[lib.sockaddrp]
       val namelen = stackalloc[CInt]()
 
