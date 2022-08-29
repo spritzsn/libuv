@@ -255,6 +255,11 @@ object LibUV:
 
   def uv_os_gethostname(buffer: Ptr[CChar], size: Ptr[CSize]): CInt = extern
 
+  type uv_timeval64_t = CStruct2[CLong, CInt]
+  type uv_timeval64_tp = Ptr[uv_timeval64_t]
+
+  def uv_gettimeofday(tv: uv_timeval64_tp): CInt = extern
+
   //
   // File system operations
   //

@@ -123,6 +123,12 @@ package object libuv:
     buffer(255) = 0.toByte
     fromCString(buffer)
 
+  def getTimeOfDay: (Long, Int) =
+    val tv = stackalloc[lib.uv_timeval64_t]()
+
+    lib.uv_gettimeofday(tv)
+    (tv._1, tv._2)
+
   def loopInit: Loop =
     val loop = malloc(lib.uv_loop_size)
 
