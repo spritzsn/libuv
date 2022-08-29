@@ -460,11 +460,33 @@ package object libuv:
 
   implicit class TCP(val handle: lib.uv_tcp_t) extends AnyVal:
     def bind(ip: String, port: Int, flags: Int): Int = Zone { implicit z =>
-      val socketAddress = stackalloc[Byte](extern.SOCKADDR_IN_SIZE).asInstanceOf[lib.sockaddr_inp]
+      val socketAddress = stackalloc[Byte](lib.uv_sockaddr_in_size).asInstanceOf[lib.sockaddr_inp]
 
       checkError(lib.uv_ip4_addr(toCString(ip), port, socketAddress), "uv_ip4_addr")
       checkError(lib.uv_tcp_bind(handle, socketAddress, flags), "uv_tcp_bind")
     }
+
+    def getsockname: String =
+      val sockaddr = stackalloc[Byte](lib.uv_sockaddr_storage_size).asInstanceOf[lib.sockaddrp]
+      val namelen = stackalloc[CInt]()
+
+      checkError(lib.uv_tcp_getsockname(handle, sockaddr, namelen), "uv_tcp_getsockname")
+
+      val dst = stackalloc[CChar](100)
+
+      checkError(lib.uv_ip4_name(sockaddr, dst, 100.toUInt), "uv_ip4_name")
+      fromCString(dst)
+
+    def getpeername: String =
+      val sockaddr = stackalloc[Byte](lib.uv_sockaddr_storage_size).asInstanceOf[lib.sockaddrp]
+      val namelen = stackalloc[CInt]()
+
+      checkError(lib.uv_tcp_getpeername(handle, sockaddr, namelen), "uv_tcp_getpeername")
+
+      val dst = stackalloc[CChar](100)
+
+      checkError(lib.uv_ip4_name(sockaddr, dst, 100.toUInt), "uv_ip4_name")
+      fromCString(dst)
 
     def listen(backlog: Int, cb: ConnectionCallback): Int =
       connectionCallbacks(handle.toLong) = cb

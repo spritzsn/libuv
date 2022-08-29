@@ -8,10 +8,14 @@ import scala.scalanative.unsigned._
 object LibUV:
 
   //
-  // macros
+  // util.c
   //
 
   def uv_eof: CInt = extern
+
+  def uv_sockaddr_in_size: CUnsignedInt = extern
+
+  def uv_sockaddr_storage_size: CUnsignedInt = extern
 
   //
   // Version-checking macros and functions
@@ -221,7 +225,11 @@ object LibUV:
 
   def uv_tcp_init(loop: uv_loop_t, handle: uv_tcp_t): CInt = extern
 
-  def uv_tcp_bind(tcp_handle: uv_tcp_t, addr: sockaddr_inp, flags: CInt): CInt = extern
+  def uv_tcp_bind(handle: uv_tcp_t, addr: sockaddr_inp, flags: CInt): CInt = extern
+
+  def uv_tcp_getsockname(handle: uv_tcp_t, name: sockaddrp, namelen: Ptr[CInt]): CInt = extern
+
+  def uv_tcp_getpeername(handle: uv_tcp_t, name: sockaddrp, namelen: Ptr[CInt]): CInt = extern
 
   //
   // Miscellaneous utilities
@@ -234,10 +242,14 @@ object LibUV:
   type uv_pid_t = CInt
   type sockaddr_in = CStruct0 // netinet/in.h
   type sockaddr_inp = Ptr[sockaddr_in]
+  type sockaddr = CStruct0 // x86_64-linux-gnu/bits/socket.h
+  type sockaddrp = Ptr[sockaddr]
 
   def uv_ip4_addr(ip: CString, port: CInt, addr: sockaddr_inp): CInt = extern
 
   def uv_ip4_name(src: sockaddr_inp, dst: CString, size: CSize): CInt = extern
+
+  def uv_ip_name(src: sockaddrp, dst: CString, size: CSize): CInt = extern
 
   def uv_hrtime: CUnsignedLong = extern
 
@@ -314,5 +326,3 @@ object LibUV:
   //  def uv_rwlock_wrlock(rwlock: RWLock): Unit = extern
   //
   //  def uv_rwlock_wrunlock(rwlock: RWLock): Unit = extern
-
-private[libuv] final val SOCKADDR_IN_SIZE: CUnsignedInt = 16.toUInt
