@@ -485,6 +485,7 @@ package object libuv:
       val sockaddr = stackalloc[Byte](lib.uv_sockaddr_storage_size).asInstanceOf[lib.sockaddrp]
       val namelen = stackalloc[CInt]()
 
+      !namelen = lib.uv_sockaddr_storage_size.toInt
       checkError(lib.uv_tcp_getsockname(handle, sockaddr, namelen), "uv_tcp_getsockname")
 
       val dst = stackalloc[CChar](100)
@@ -496,6 +497,7 @@ package object libuv:
       val sockaddr = stackalloc[Byte](lib.uv_sockaddr_storage_size).asInstanceOf[lib.sockaddrp]
       val namelen = stackalloc[CInt]()
 
+      !namelen = lib.uv_sockaddr_storage_size.toInt
       checkError(lib.uv_tcp_getpeername(handle, sockaddr, namelen), "uv_tcp_getpeername")
 
       val dst = stackalloc[CChar](100)

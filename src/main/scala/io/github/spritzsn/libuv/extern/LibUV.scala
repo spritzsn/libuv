@@ -17,6 +17,8 @@ object LibUV:
 
   def uv_sockaddr_storage_size: CUnsignedInt = extern
 
+  def ipAddress(sock: sockaddr_inp): CUnsignedInt = extern
+
   //
   // Version-checking macros and functions
   //

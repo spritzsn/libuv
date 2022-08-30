@@ -52,8 +52,8 @@
 //
 //    handle.accept(client)
 //
-//    println(client.getsockname)
-//    println(client.getpeername)
+//    println(s"local: ${client.getSockName}")
+//    println(s"remote: ${client.getPeerName}")
 //
 //    def readCallback(client: TCP, size: Int, buf: Buffer): Unit =
 //      client.write(
