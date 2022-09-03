@@ -7,6 +7,8 @@ import scala.scalanative.libc.stdlib.*
 import java.util.IdentityHashMap
 import scala.io.Codec
 
+import scala.scalanative.posix.fcntl
+
 package object libuv:
 
   enum Platform:
@@ -69,17 +71,20 @@ package object libuv:
     final val RUN_ONCE = new RunMode(1)
     final val RUN_NOWAIT = new RunMode(2)
 
-  val O_RDONLY = 0
-  val O_WRONLY = 1
-  val O_RDWR = 2
+  val O_RDONLY: Int = fcntl.O_RDONLY
+  val O_WRONLY: Int = fcntl.O_WRONLY
+  val O_RDWR: Int = fcntl.O_RDWR
 
   val O_CREAT: Int = if sys.props("os.name") == "Mac OS X" then 0x200 else 0x40
-  val O_APPEND = 0x400
-  val O_SYNC = 0x101000
-  val O_DSYNC = 0x1000
+  val O_TRUNC: Int = fcntl.O_TRUNC
+  val O_APPEND: Int = fcntl.O_APPEND
+  val O_SYNC: Int = fcntl.O_SYNC
+  val O_DSYNC: Int = 0x1000
+  val O_EXCL: Int = fcntl.O_EXCL
 
   private def o(n: Int): Int = Integer.parseInt(n.toString, 8)
 
+  val ALLRW: Int = o(666)
   val S_IRWXU: Int = o(700)
   val S_IRUSR: Int = o(400) //  user has read permission
   val S_IWUSR: Int = o(200) //  user has write permission
