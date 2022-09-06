@@ -238,6 +238,55 @@ object LibUV:
   def uv_tcp_getpeername(handle: uv_tcp_t, name: sockaddrp, namelen: Ptr[CInt]): CInt = extern
 
   //
+  // File system operations
+  //
+
+  type uv_fs_t = Ptr[Ptr[Byte]]
+  type uv_fs_cb = CFuncPtr1[uv_fs_t, Unit]
+
+  def uv_fs_open(loop: uv_loop_t, req: uv_fs_t, path: CString, flags: CInt, mode: CInt, cb: uv_fs_cb): CInt = extern
+
+  def uv_fs_read(
+                  loop: uv_loop_t,
+                  req: uv_fs_t,
+                  file: CInt,
+                  bufs: uv_buf_t,
+                  nbufs: CInt,
+                  offset: Long,
+                  cb: uv_fs_cb,
+                ): CInt =
+    extern
+
+  def uv_fs_write(
+                   loop: uv_loop_t,
+                   req: uv_fs_t,
+                   file: CInt,
+                   bufs: uv_buf_t,
+                   nbufs: CInt,
+                   offset: Long,
+                   cb: uv_fs_cb,
+                 ): CInt =
+    extern
+
+  def uv_fs_close(loop: uv_loop_t, req: uv_fs_t, file: CInt, cb: uv_fs_cb): CInt = extern
+
+  def uv_fs_req_cleanup(req: uv_fs_t): Unit = extern
+
+  def uv_fs_get_result(req: uv_fs_t): CSSize = extern
+
+  def uv_fs_get_ptr(req: uv_fs_t): Ptr[Byte] = extern
+
+  def uv_fs_get_type(req: uv_fs_t): CInt /*uv_fs_type*/ = extern
+
+  //
+  // DNS utility functions
+  //
+
+  def uv_getaddrinfo(uv_loop_t * loop, uv_getaddrinfo_t * req, uv_getaddrinfo_cb getaddrinfo_cb, const char * node, const char * service, const struct addrinfo * hints)
+
+  def uv_freeaddrinfo (struct addrinfo * ai): Unit = extern
+
+  //
   // Miscellaneous utilities
   //
 
@@ -265,47 +314,6 @@ object LibUV:
   type uv_timeval64_tp = Ptr[uv_timeval64_t]
 
   def uv_gettimeofday(tv: uv_timeval64_tp): CInt = extern
-
-  //
-  // File system operations
-  //
-
-  type uv_fs_t = Ptr[Ptr[Byte]]
-  type uv_fs_cb = CFuncPtr1[uv_fs_t, Unit]
-
-  def uv_fs_open(loop: uv_loop_t, req: uv_fs_t, path: CString, flags: CInt, mode: CInt, cb: uv_fs_cb): CInt = extern
-
-  def uv_fs_read(
-      loop: uv_loop_t,
-      req: uv_fs_t,
-      file: CInt,
-      bufs: uv_buf_t,
-      nbufs: CInt,
-      offset: Long,
-      cb: uv_fs_cb,
-  ): CInt =
-    extern
-
-  def uv_fs_write(
-      loop: uv_loop_t,
-      req: uv_fs_t,
-      file: CInt,
-      bufs: uv_buf_t,
-      nbufs: CInt,
-      offset: Long,
-      cb: uv_fs_cb,
-  ): CInt =
-    extern
-
-  def uv_fs_close(loop: uv_loop_t, req: uv_fs_t, file: CInt, cb: uv_fs_cb): CInt = extern
-
-  def uv_fs_req_cleanup(req: uv_fs_t): Unit = extern
-
-  def uv_fs_get_result(req: uv_fs_t): CSSize = extern
-
-  def uv_fs_get_ptr(req: uv_fs_t): Ptr[Byte] = extern
-
-  def uv_fs_get_type(req: uv_fs_t): CInt /*uv_fs_type*/ = extern
 
   //
 
