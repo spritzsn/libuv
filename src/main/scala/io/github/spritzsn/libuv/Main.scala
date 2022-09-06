@@ -1,6 +1,9 @@
-//package io.github.spritzsn.libuv
-//
-//@main def run(): Unit =
+package io.github.spritzsn.libuv
+
+@main def run(): Unit =
+
+  defaultLoop.run()
+
 //  defaultLoop.spawn("sleep", Vector("3"))
 //  defaultLoop.run()
 

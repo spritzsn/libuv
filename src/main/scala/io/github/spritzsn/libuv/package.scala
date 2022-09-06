@@ -538,6 +538,14 @@ package object libuv:
       !req = buffer.buf
       checkError(lib.uv_write(req, handle, buffer.buf, 1.toUInt, writeCallback), "uv_write")
 
+    def connect(data: collection.IndexedSeq[Byte]): Int =
+      val req = malloc(lib.uv_req_size(ReqType.CONNECT.value)).asInstanceOf[lib.uv_connect_t]
+      val buffer = Buffer(data.length)
+
+      buffer.write(data, 0)
+      !req = buffer.buf
+      checkError(lib.uv_write(req, handle, buffer.buf, 1.toUInt, writeCallback), "uv_connect")
+
     def shutdown(cb: ShutdownCallback): Int =
       val req = malloc(lib.uv_req_size(ReqType.SHUTDOWN.value)).asInstanceOf[lib.uv_shutdown_t]
 

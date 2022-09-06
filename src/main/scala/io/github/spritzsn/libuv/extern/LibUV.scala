@@ -190,11 +190,13 @@ object LibUV:
   //
 
   type uv_stream_t = Ptr[Byte]
+  type uv_connect_t = Ptr[Ptr[Byte]]
   type uv_shutdown_t = Ptr[Ptr[Byte]]
   type uv_write_t = Ptr[Ptr[Byte]]
   type uv_connection_cb = CFuncPtr2[uv_stream_t, CInt, Unit]
   type uv_read_cb = CFuncPtr3[uv_stream_t, CSSize, uv_buf_t, Unit]
   type uv_write_cb = CFuncPtr2[uv_write_t, Int, Unit]
+  type uv_connect_cb = CFuncPtr2[uv_connect_t, Int, Unit]
   type uv_shutdown_cb = CFuncPtr2[uv_shutdown_t, Int, Unit]
 
   def uv_shutdown(req: uv_shutdown_t, handle: uv_stream_t, cb: uv_shutdown_cb): CInt = extern
@@ -224,6 +226,8 @@ object LibUV:
   //
 
   type uv_tcp_t = Ptr[Byte]
+
+  def uv_tcp_connect(req: uv_connect_t, handle: uv_tcp_t, addr: sockaddrp, cb: uv_connect_cb): CInt = extern
 
   def uv_tcp_init(loop: uv_loop_t, handle: uv_tcp_t): CInt = extern
 
