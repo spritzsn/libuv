@@ -287,6 +287,15 @@ package object libuv:
 
       checkError(lib.uv_poll_init(loop, handle, fd), "uv_poll_init")
       handle
+
+    def getAddrInfo(
+        getaddrinfo_cb: GetAddrInfoCallback,
+        node: String,
+        service: String,
+        family: Int,
+    ): Int =
+      val req = malloc()
+      lib.uv_getaddrinfo(loop,)
   end Loop
 
   private def allocfs = malloc(lib.uv_req_size(ReqType.FS.value)).asInstanceOf[lib.uv_fs_t]

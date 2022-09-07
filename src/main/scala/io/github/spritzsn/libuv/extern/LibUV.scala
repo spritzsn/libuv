@@ -2,6 +2,7 @@ package io.github.spritzsn.libuv.extern
 
 import scala.scalanative.unsafe._
 import scala.scalanative.unsigned._
+import scala.scalanative.posix.netdb.addrinfo
 
 @link("uv")
 @extern
@@ -247,25 +248,25 @@ object LibUV:
   def uv_fs_open(loop: uv_loop_t, req: uv_fs_t, path: CString, flags: CInt, mode: CInt, cb: uv_fs_cb): CInt = extern
 
   def uv_fs_read(
-                  loop: uv_loop_t,
-                  req: uv_fs_t,
-                  file: CInt,
-                  bufs: uv_buf_t,
-                  nbufs: CInt,
-                  offset: Long,
-                  cb: uv_fs_cb,
-                ): CInt =
+      loop: uv_loop_t,
+      req: uv_fs_t,
+      file: CInt,
+      bufs: uv_buf_t,
+      nbufs: CInt,
+      offset: Long,
+      cb: uv_fs_cb,
+  ): CInt =
     extern
 
   def uv_fs_write(
-                   loop: uv_loop_t,
-                   req: uv_fs_t,
-                   file: CInt,
-                   bufs: uv_buf_t,
-                   nbufs: CInt,
-                   offset: Long,
-                   cb: uv_fs_cb,
-                 ): CInt =
+      loop: uv_loop_t,
+      req: uv_fs_t,
+      file: CInt,
+      bufs: uv_buf_t,
+      nbufs: CInt,
+      offset: Long,
+      cb: uv_fs_cb,
+  ): CInt =
     extern
 
   def uv_fs_close(loop: uv_loop_t, req: uv_fs_t, file: CInt, cb: uv_fs_cb): CInt = extern
@@ -282,9 +283,20 @@ object LibUV:
   // DNS utility functions
   //
 
-  def uv_getaddrinfo(uv_loop_t * loop, uv_getaddrinfo_t * req, uv_getaddrinfo_cb getaddrinfo_cb, const char * node, const char * service, const struct addrinfo * hints)
+  type uv_getaddrinfo_t = Ptr[Ptr[Byte]]
+  type addrinfop = Ptr[addrinfo]
+  type uv_getaddrinfo_cb = CFuncPtr3[uv_getaddrinfo_t, CInt, addrinfop, Unit]
 
-  def uv_freeaddrinfo (struct addrinfo * ai): Unit = extern
+  def uv_getaddrinfo(
+      loop: uv_loop_t,
+      req: uv_getaddrinfo_t,
+      getaddrinfo_cb: uv_getaddrinfo_cb,
+      node: CString,
+      service: CString,
+      hints: addrinfop,
+  ): CInt = extern
+
+  def uv_freeaddrinfo(ai: addrinfop): Unit = extern
 
   //
   // Miscellaneous utilities
