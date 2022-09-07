@@ -3,10 +3,10 @@ package io.github.spritzsn
 import scala.collection.mutable
 import scala.scalanative.unsafe.*
 import scala.scalanative.unsigned.*
-import scala.scalanative.libc.stdlib.*
+import scala.scalanative.libc.stdlib
 import java.util.IdentityHashMap
+import scala.collection.mutable.ListBuffer
 import scala.io.Codec
-
 import scala.scalanative.posix.fcntl
 
 package object libuv:
@@ -62,7 +62,6 @@ package object libuv:
     final val WORK = new ReqType(7)
     final val GETADDRINFO = new ReqType(8)
     final val GETNAMEINFO = new ReqType(9)
-    final val REQ_TYPE_MAX = new ReqType(10)
 
   implicit class RunMode(val value: lib.uv_run_mode) extends AnyVal
 
@@ -140,6 +139,13 @@ package object libuv:
     lib.uv_loop_init(loop)
     loop
 
+  private def free(p: Ptr[_]): Unit = stdlib.free(p.asInstanceOf[Ptr[Byte]])
+
+  private def malloc[T](inline n: CSize = 1.toULong)(using Tag[T]): Ptr[T] =
+    stdlib.malloc(sizeof[T] * n.toULong).asInstanceOf[Ptr[T]]
+
+  private def mallocReq[T](typ: ReqType): T = stdlib.malloc(lib.uv_req_size(typ.value)).asInstanceOf[T]
+
   private val exitCallbacks = new mutable.HashMap[lib.uv_process_t, ExitCallback]
 
   private val closeCallbackProcess: lib.uv_close_cb =
@@ -149,11 +155,11 @@ package object libuv:
       var i = 0
 
       while !(args + i) != null do
-        free((!(args + i)).asInstanceOf[Ptr[Byte]])
+        free((!(args + i)))
         i += 1
 
-      free(args.asInstanceOf[Ptr[Byte]])
-      free(options.asInstanceOf[Ptr[Byte]])
+      free(args)
+      free(options)
       free(handle)
 
   private val exitCallback: lib.uv_exit_cb =
@@ -172,7 +178,7 @@ package object libuv:
       fileCallbacks -= req
     }
     lib.uv_fs_req_cleanup(req)
-    free(req.asInstanceOf[Ptr[Byte]])
+    free(req)
 
   private def fileCallbackWithDispose(req: lib.uv_fs_t): Unit =
     val buf = req.buffer
@@ -180,10 +186,23 @@ package object libuv:
     fileCallback(req)
     buf.dispose()
 
-  private val pollCallbacks = new mutable.HashMap[lib.uv_poll_t, (Poll, Int, Int) => Unit]
+  type PollCallback = (Poll, Int, Int) => Unit
+
+  private val pollCallbacks = new mutable.HashMap[lib.uv_poll_t, PollCallback]
 
   private def pollCallback(handle: lib.uv_poll_t, status: CInt, events: CInt): Unit =
     pollCallbacks get handle foreach (_(handle, status, events))
+
+  type GetAddrInfoCallback = (Poll, Int, Int) => Unit
+  case class AddrInfo(family: Int, )
+
+  private val getaddrinfoCallbacks = new mutable.HashMap[lib.uv_getaddrinfo_t, GetAddrInfoCallback]
+
+  private def getaddrinfoCallback(req: lib.uv_getaddrinfo_t, status: CInt, res: lib.addrinfop): Unit =
+    val addrInfo = new ListBuffer[()]
+
+    getaddrinfoCallbacks get handle foreach (_(status, addrInfo))
+    free(req)
 
   implicit class Loop(val loop: lib.uv_loop_t) extends AnyVal:
     def run(mode: RunMode = RunMode.RUN_DEFAULT): Int = lib.uv_run(loop, mode.value)
@@ -294,11 +313,12 @@ package object libuv:
         service: String,
         family: Int,
     ): Int =
-      val req = malloc()
-      lib.uv_getaddrinfo(loop,)
+      val req = mallocReq[lib.uv_getaddrinfo_t](ReqType.GETADDRINFO)
+
+      lib.uv_getaddrinfo(loop, req, getaddrinfoCallback)
   end Loop
 
-  private def allocfs = malloc(lib.uv_req_size(ReqType.FS.value)).asInstanceOf[lib.uv_fs_t]
+  private def allocfs = mallocReq[lib.uv_fs_t](ReqType.FS)
 
   def defaultLoop: Loop = lib.uv_default_loop
 
@@ -365,7 +385,7 @@ package object libuv:
       free(handle)
 
   implicit class Poll(val handle: lib.uv_poll_t) extends AnyVal:
-    def start(events: Int, callback: (Poll, Int, Int) => Unit): Int =
+    def start(events: Int, callback: PollCallback): Int =
       pollCallbacks(handle) = callback
       lib.uv_poll_start(handle, events, pollCallback)
 
@@ -373,12 +393,12 @@ package object libuv:
 
     def dispose(): Unit =
       pollCallbacks -= handle
-      free(handle.asInstanceOf[Ptr[Byte]])
+      free(handle)
 
   object Buffer:
     def apply(size: Int): Buffer =
-      val buf: Buffer = malloc(16.toUInt)
-      val base = malloc(size.toUInt)
+      val buf: Buffer = stdlib.malloc(16.toUInt)
+      val base = stdlib.malloc(size.toUInt)
 
       !buf.baseptr = base
       !buf.lenptr = size.toULong
@@ -463,7 +483,7 @@ package object libuv:
       val buf = new Buffer(!req)
 
       buf.dispose()
-      free(req.asInstanceOf[Ptr[Byte]])
+      free(req)
 
   type ShutdownCallback = TCP => Unit
 
@@ -475,7 +495,7 @@ package object libuv:
 
       shutdownCallbacks(req)(handle)
       shutdownCallbacks -= req
-      free(req.asInstanceOf[Ptr[Byte]])
+      free(req)
 
 //  type CloseCallbackTCP = TCP => Unit
 //
@@ -540,7 +560,7 @@ package object libuv:
     def isWritable: Boolean = lib.uv_is_writable(handle) > 0
 
     def write(data: collection.IndexedSeq[Byte]): Int =
-      val req = malloc(lib.uv_req_size(ReqType.WRITE.value)).asInstanceOf[lib.uv_write_t]
+      val req = mallocReq[lib.uv_write_t](ReqType.WRITE)
       val buffer = Buffer(data.length)
 
       buffer.write(data, 0)
@@ -548,7 +568,7 @@ package object libuv:
       checkError(lib.uv_write(req, handle, buffer.buf, 1.toUInt, writeCallback), "uv_write")
 
     def connect(data: collection.IndexedSeq[Byte]): Int =
-      val req = malloc(lib.uv_req_size(ReqType.CONNECT.value)).asInstanceOf[lib.uv_connect_t]
+      val req = mallocReq[lib.uv_connect_t](ReqType.CONNECT)
       val buffer = Buffer(data.length)
 
       buffer.write(data, 0)
@@ -556,7 +576,7 @@ package object libuv:
       checkError(lib.uv_write(req, handle, buffer.buf, 1.toUInt, writeCallback), "uv_connect")
 
     def shutdown(cb: ShutdownCallback): Int =
-      val req = malloc(lib.uv_req_size(ReqType.SHUTDOWN.value)).asInstanceOf[lib.uv_shutdown_t]
+      val req = mallocReq[lib.uv_shutdown_t](ReqType.SHUTDOWN)
 
       !req = handle
       shutdownCallbacks(req) = cb
@@ -576,7 +596,7 @@ package object libuv:
 
   def allocString(s: String): CString =
     val bytes = s.getBytes(scala.io.Codec.UTF8.charSet)
-    val cstr = malloc((bytes.length + 1).toULong)
+    val cstr = stdlib.malloc((bytes.length + 1).toULong)
     var c = 0
 
     while c < bytes.length do
