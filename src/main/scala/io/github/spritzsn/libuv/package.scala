@@ -194,7 +194,7 @@ package object libuv:
     pollCallbacks get handle foreach (_(handle, status, events))
 
   type GetAddrInfoCallback = (Poll, Int, Int) => Unit
-  case class AddrInfo(family: Int, )
+  case class AddrInfo(family: Int, ip: String, canonicalName: String)
 
   private val getaddrinfoCallbacks = new mutable.HashMap[lib.uv_getaddrinfo_t, GetAddrInfoCallback]
 
