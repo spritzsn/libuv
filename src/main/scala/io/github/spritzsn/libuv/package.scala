@@ -9,6 +9,7 @@ import scala.collection.mutable.ListBuffer
 import scala.io.Codec
 import scala.scalanative.posix.fcntl
 import scala.scalanative.posix.netdb
+import scala.scalanative.posix.netdb.netdbOps_
 
 package object libuv:
 
@@ -203,8 +204,13 @@ package object libuv:
 
   private def getaddrinfoCallback(req: lib.uv_getaddrinfo_t, status: CInt, res: lib.addrinfop): Unit =
     val buf = new ListBuffer[AddrInfo]
+    val addrinfo = lib.libuv_get_addrinfo(req)
 
+    println(fromCString(addrinfo.ai_canonname))
     getaddrinfoCallbacks get req foreach (_(status, buf.toList))
+    getaddrinfoCallbacks -= req
+    lib.uv_freeaddrinfo(addrinfo)
+    free(lib.libuv_get_hints(req))
     free(req)
 
   implicit class Loop(val loop: lib.uv_loop_t) extends AnyVal:
@@ -319,6 +325,7 @@ package object libuv:
       val req = mallocReq[lib.uv_getaddrinfo_t](ReqType.GETADDRINFO)
       val hints = malloc[netdb.addrinfo]()
 
+      getaddrinfoCallbacks(req) = getaddrinfo_cb
       Zone { implicit z =>
         lib.uv_getaddrinfo(loop, req, getaddrinfoCallback, toCString(node), toCString(service), hints)
       }
