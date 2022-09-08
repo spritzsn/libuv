@@ -12,6 +12,7 @@ import scala.scalanative.posix.fcntl
 import scala.scalanative.posix.netdb.{AI_CANONNAME, addrinfo}
 import scala.scalanative.posix.netdbOps.*
 import scala.scalanative.posix.sys.socket.SOCK_STREAM
+import scala.scalanative.posix.sys.socketOps.*
 
 package object libuv:
 
@@ -206,10 +207,14 @@ package object libuv:
 
   private def getaddrinfoCallback(req: lib.uv_getaddrinfo_t, status: CInt, res: lib.addrinfop): Unit =
     val buf = new ListBuffer[AddrInfo]
+    val addr = stackalloc[Byte](50)
 
     println(s"status $status ${strError(status)}")
     if res == null then println("addrinfo null")
-    else if res.ai_canonname != null then println(fromCString(res.ai_canonname))
+    else if res.ai_canonname != null then
+      println(fromCString(res.ai_canonname))
+      println(lib.uv_ip4_name(res.ai_addr.asInstanceOf[lib.sockaddr_inp], addr, 50.toUInt))
+      println(fromCString(addr))
     else println(null)
 
     getaddrinfoCallbacks get req foreach (_(status, buf.toList))
