@@ -142,10 +142,12 @@ package object libuv:
 
   private def free(p: Ptr[_]): Unit = stdlib.free(p.asInstanceOf[Ptr[Byte]])
 
-  private def malloc[T](inline n: CSize = 1.toULong)(using Tag[T]): Ptr[T] =
+  private inline def malloc[T](inline n: CSize = 1.toULong)(using Tag[T]): Ptr[T] =
     stdlib.malloc(sizeof[T] * n.toULong).asInstanceOf[Ptr[T]]
 
   private def mallocReq[T](typ: ReqType): T = stdlib.malloc(lib.uv_req_size(typ.value)).asInstanceOf[T]
+
+  private def mallocHandle[T](typ: HandleType): T = stdlib.malloc(lib.uv_handle_size(typ.value)).asInstanceOf[T]
 
   private val exitCallbacks = new mutable.HashMap[lib.uv_process_t, ExitCallback]
 
@@ -215,44 +217,44 @@ package object libuv:
     def now: Long = lib.uv_now(loop)
 
     def timer: Timer =
-      val timer = malloc(lib.uv_handle_size(HandleType.TIMER.value))
+      val timer = mallocHandle[lib.uv_timer_t](HandleType.TIMER)
 
       checkError(lib.uv_timer_init(loop, timer), "uv_timer_init")
       timer
 
     def prepare: Prepare =
-      val prepare = malloc(lib.uv_handle_size(HandleType.PREPARE.value))
+      val prepare = mallocHandle[lib.uv_prepare_t](HandleType.PREPARE)
 
       checkError(lib.uv_prepare_init(loop, prepare), "uv_prepare_init")
       prepare
 
     def check: Check =
-      val check = malloc(lib.uv_handle_size(HandleType.CHECK.value))
+      val check = mallocHandle[lib.uv_check_t](HandleType.CHECK)
 
       checkError(lib.uv_check_init(loop, check), "uv_check_init")
       check
 
     def idle: Idle =
-      val idle = malloc(lib.uv_handle_size(HandleType.IDLE.value))
+      val idle = mallocHandle[lib.uv_idle_t](HandleType.IDLE)
 
       checkError(lib.uv_idle_init(loop, idle), "uv_idle_init")
       idle
 
     def tcp: TCP =
-      val tcp = malloc(lib.uv_handle_size(HandleType.TCP.value))
+      val tcp = mallocHandle[lib.uv_tcp_t](HandleType.TCP)
 
       checkError(lib.uv_tcp_init(loop, tcp), "uv_tcp_init")
       tcp
 
     def spawn(program: String, args: IndexedSeq[String], exit_cb: ExitCallback = null): Int =
-      val handle = malloc(lib.uv_handle_size(HandleType.PROCESS.value))
-      val options = malloc(sizeof[lib.uv_process_options_t]).asInstanceOf[lib.uv_process_options_tp]
+      val handle = mallocHandle[lib.uv_process_t](HandleType.PROCESS)
+      val options = stdlib.malloc(sizeof[lib.uv_process_options_t]).asInstanceOf[lib.uv_process_options_tp]
 
       !handle.asInstanceOf[Ptr[lib.uv_process_options_tp]] = options
 
       for i <- 0 until sizeof[lib.uv_process_options_t].toInt do !(options.asInstanceOf[Ptr[Byte]] + i) = 0.toByte
 
-      val argsArray = malloc((args.length + 2).toUInt * sizeof[CString]).asInstanceOf[Ptr[CString]]
+      val argsArray = stdlib.malloc((args.length + 2).toUInt * sizeof[CString]).asInstanceOf[Ptr[CString]]
       val file = allocString(program)
 
       argsArray(0) = file
@@ -303,7 +305,7 @@ package object libuv:
       checkError(lib.uv_fs_close(loop, req, file, fileCallback), "uv_fs_close")
 
     def poll(fd: Int): Poll =
-      val handle = malloc(lib.uv_handle_size(HandleType.POLL.value)).asInstanceOf[lib.uv_poll_t]
+      val handle = mallocHandle[lib.uv_poll_t](HandleType.POLL.value)
 
       checkError(lib.uv_poll_init(loop, handle, fd), "uv_poll_init")
       handle
