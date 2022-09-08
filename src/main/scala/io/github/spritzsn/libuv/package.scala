@@ -8,6 +8,7 @@ import java.util.IdentityHashMap
 import scala.collection.mutable.ListBuffer
 import scala.io.Codec
 import scala.scalanative.posix.fcntl
+import scala.scalanative.posix.netdb
 
 package object libuv:
 
@@ -314,8 +315,9 @@ package object libuv:
         family: Int,
     ): Int =
       val req = mallocReq[lib.uv_getaddrinfo_t](ReqType.GETADDRINFO)
+      val hints = stdlib.malloc()
 
-      lib.uv_getaddrinfo(loop, req, getaddrinfoCallback)
+      Zone { implicit z => lib.uv_getaddrinfo(loop, req, getaddrinfoCallback, toCString(node), toCString(service)) }
   end Loop
 
   private def allocfs = mallocReq[lib.uv_fs_t](ReqType.FS)
@@ -509,14 +511,14 @@ package object libuv:
 
   implicit class TCP(val handle: lib.uv_tcp_t) extends AnyVal:
     def bind(ip: String, port: Int, flags: Int): Int = Zone { implicit z =>
-      val socketAddress = stackalloc[Byte](lib.uv_sockaddr_in_size).asInstanceOf[lib.sockaddr_inp]
+      val socketAddress = stackalloc[Byte](lib.libuv_in_sockaddr_in_size).asInstanceOf[lib.sockaddr_inp]
 
       checkError(lib.uv_ip4_addr(toCString(ip), port, socketAddress), "uv_ip4_addr")
       checkError(lib.uv_tcp_bind(handle, socketAddress, flags), "uv_tcp_bind")
     }
 
     def getSockName: String =
-      val sockaddr = stackalloc[Byte](lib.uv_sockaddr_storage_size).asInstanceOf[lib.sockaddrp]
+      val sockaddr = stackalloc[Byte](lib.libuv_sockaddr_storage_size).asInstanceOf[lib.sockaddrp]
       val namelen = stackalloc[CInt]()
 
       !namelen = lib.uv_sockaddr_storage_size.toInt
