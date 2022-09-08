@@ -9,7 +9,7 @@ import scala.collection.mutable.ListBuffer
 import scala.io.Codec
 import scala.scalanative.posix.fcntl
 import scala.scalanative.posix.netdb
-import scala.scalanative.posix.netdb.netdbOps_
+import scala.scalanative.posix.netdbOps._
 
 package object libuv:
 
