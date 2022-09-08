@@ -135,7 +135,7 @@ package object libuv:
     (tv._1, tv._2)
 
   def loopInit: Loop =
-    val loop = malloc(lib.uv_loop_size)
+    val loop = stdlib.malloc(lib.uv_loop_size)
 
     lib.uv_loop_init(loop)
     loop
@@ -194,15 +194,15 @@ package object libuv:
   private def pollCallback(handle: lib.uv_poll_t, status: CInt, events: CInt): Unit =
     pollCallbacks get handle foreach (_(handle, status, events))
 
-  type GetAddrInfoCallback = (Poll, Int, Int) => Unit
+  type GetAddrInfoCallback = (Int, List[AddrInfo]) => Unit
   case class AddrInfo(family: Int, ip: String, canonicalName: String)
 
   private val getaddrinfoCallbacks = new mutable.HashMap[lib.uv_getaddrinfo_t, GetAddrInfoCallback]
 
   private def getaddrinfoCallback(req: lib.uv_getaddrinfo_t, status: CInt, res: lib.addrinfop): Unit =
-    val addrInfo = new ListBuffer[()]
+    val buf = new ListBuffer[AddrInfo]
 
-    getaddrinfoCallbacks get handle foreach (_(status, addrInfo))
+    getaddrinfoCallbacks get req foreach (_(status, buf.toList))
     free(req)
 
   implicit class Loop(val loop: lib.uv_loop_t) extends AnyVal:
@@ -315,9 +315,11 @@ package object libuv:
         family: Int,
     ): Int =
       val req = mallocReq[lib.uv_getaddrinfo_t](ReqType.GETADDRINFO)
-      val hints = stdlib.malloc()
+      val hints = malloc[netdb.addrinfo]()
 
-      Zone { implicit z => lib.uv_getaddrinfo(loop, req, getaddrinfoCallback, toCString(node), toCString(service)) }
+      Zone { implicit z =>
+        lib.uv_getaddrinfo(loop, req, getaddrinfoCallback, toCString(node), toCString(service), hints)
+      }
   end Loop
 
   private def allocfs = mallocReq[lib.uv_fs_t](ReqType.FS)
@@ -511,7 +513,7 @@ package object libuv:
 
   implicit class TCP(val handle: lib.uv_tcp_t) extends AnyVal:
     def bind(ip: String, port: Int, flags: Int): Int = Zone { implicit z =>
-      val socketAddress = stackalloc[Byte](lib.libuv_in_sockaddr_in_size).asInstanceOf[lib.sockaddr_inp]
+      val socketAddress = stackalloc[Byte](lib.libuv_sockaddr_in_size).asInstanceOf[lib.sockaddr_inp]
 
       checkError(lib.uv_ip4_addr(toCString(ip), port, socketAddress), "uv_ip4_addr")
       checkError(lib.uv_tcp_bind(handle, socketAddress, flags), "uv_tcp_bind")
@@ -521,7 +523,7 @@ package object libuv:
       val sockaddr = stackalloc[Byte](lib.libuv_sockaddr_storage_size).asInstanceOf[lib.sockaddrp]
       val namelen = stackalloc[CInt]()
 
-      !namelen = lib.uv_sockaddr_storage_size.toInt
+      !namelen = lib.libuv_sockaddr_storage_size.toInt
       checkError(lib.uv_tcp_getsockname(handle, sockaddr, namelen), "uv_tcp_getsockname")
 
       val dst = stackalloc[CChar](100)
@@ -530,10 +532,10 @@ package object libuv:
       fromCString(dst)
 
     def getPeerName: String =
-      val sockaddr = stackalloc[Byte](lib.uv_sockaddr_storage_size).asInstanceOf[lib.sockaddrp]
+      val sockaddr = stackalloc[Byte](lib.libuv_sockaddr_storage_size).asInstanceOf[lib.sockaddrp]
       val namelen = stackalloc[CInt]()
 
-      !namelen = lib.uv_sockaddr_storage_size.toInt
+      !namelen = lib.libuv_sockaddr_storage_size.toInt
       checkError(lib.uv_tcp_getpeername(handle, sockaddr, namelen), "uv_tcp_getpeername")
 
       val dst = stackalloc[CChar](100)

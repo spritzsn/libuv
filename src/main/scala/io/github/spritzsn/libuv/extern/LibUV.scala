@@ -14,9 +14,9 @@ object LibUV:
 
   def uv_eof: CInt = extern
 
-  def uv_sockaddr_in_size: CUnsignedInt = extern
+  def libuv_sockaddr_in_size: CUnsignedInt = extern
 
-  def uv_sockaddr_storage_size: CUnsignedInt = extern
+  def libuv_sockaddr_storage_size: CUnsignedInt = extern
 
   def ipAddress(sock: sockaddr_inp): CUnsignedInt = extern
 
