@@ -1,7 +1,11 @@
 package io.github.spritzsn.libuv
 
-@main def run(): Unit =
+import scala.scalanative.posix.sys.socket.AF_INET
 
+@main def run(): Unit =
+  def callback(status: Int, addrInfo: List[AddrInfo]): Unit = ()
+
+  defaultLoop.getAddrInfo(callback, "google.com", null, AF_INET)
   defaultLoop.run()
 
 //  defaultLoop.spawn("sleep", Vector("3"))

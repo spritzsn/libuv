@@ -4,12 +4,14 @@ import scala.collection.mutable
 import scala.scalanative.unsafe.*
 import scala.scalanative.unsigned.*
 import scala.scalanative.libc.stdlib
+import scala.scalanative.libc.string
 import java.util.IdentityHashMap
 import scala.collection.mutable.ListBuffer
 import scala.io.Codec
 import scala.scalanative.posix.fcntl
-import scala.scalanative.posix.netdb
-import scala.scalanative.posix.netdbOps._
+import scala.scalanative.posix.netdb.{AI_CANONNAME, addrinfo}
+import scala.scalanative.posix.netdbOps.*
+import scala.scalanative.posix.sys.socket.SOCK_STREAM
 
 package object libuv:
 
@@ -204,12 +206,15 @@ package object libuv:
 
   private def getaddrinfoCallback(req: lib.uv_getaddrinfo_t, status: CInt, res: lib.addrinfop): Unit =
     val buf = new ListBuffer[AddrInfo]
-    val addrinfo = lib.libuv_get_addrinfo(req)
 
-    println(fromCString(addrinfo.ai_canonname))
+    println(s"status $status ${strError(status)}")
+    if res == null then println("addrinfo null")
+    else if res.ai_canonname != null then println(fromCString(res.ai_canonname))
+    else println(null)
+
     getaddrinfoCallbacks get req foreach (_(status, buf.toList))
     getaddrinfoCallbacks -= req
-    lib.uv_freeaddrinfo(addrinfo)
+    lib.uv_freeaddrinfo(res)
     free(lib.libuv_get_hints(req))
     free(req)
 
@@ -323,8 +328,12 @@ package object libuv:
         family: Int,
     ): Int =
       val req = mallocReq[lib.uv_getaddrinfo_t](ReqType.GETADDRINFO)
-      val hints = malloc[netdb.addrinfo]()
+      val hints = malloc[addrinfo]()
 
+      string.memset(hints.asInstanceOf[Ptr[Byte]], 0, sizeof[addrinfo])
+      hints.ai_family = family
+      hints.ai_flags |= AI_CANONNAME
+      hints.ai_socktype = SOCK_STREAM
       getaddrinfoCallbacks(req) = getaddrinfo_cb
       Zone { implicit z =>
         lib.uv_getaddrinfo(loop, req, getaddrinfoCallback, toCString(node), toCString(service), hints)
