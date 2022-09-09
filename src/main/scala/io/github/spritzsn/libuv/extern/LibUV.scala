@@ -14,7 +14,7 @@ object LibUV:
   // util.c
   //
 
-  def uv_eof: CInt = extern
+  def libuv_eof: CInt = extern
 
   def libuv_sockaddr_storage_size: CUnsignedInt = extern
 

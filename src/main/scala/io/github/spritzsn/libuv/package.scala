@@ -30,7 +30,7 @@ package object libuv:
 
   import extern.{LibUV => lib}
 
-  def eof: Int = lib.uv_eof
+  def eof: Int = lib.libuv_eof
 
   implicit class HandleType(val value: lib.uv_handle_type) extends AnyVal
 
