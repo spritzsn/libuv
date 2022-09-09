@@ -1,13 +1,13 @@
-package io.github.spritzsn.libuv
-
-import scala.scalanative.posix.sys.socket.{AF_INET, AF_UNSPEC}
-
-@main def run(): Unit =
-  def callback(status: Int, addrInfo: List[AddrInfo]): Unit =
-    println(s"status: $status; addrInfo $addrInfo")
-
-  defaultLoop.getAddrInfo(callback, "google.com", null, AF_UNSPEC)
-  defaultLoop.run()
+//package io.github.spritzsn.libuv
+//
+//import scala.scalanative.posix.sys.socket.{AF_INET, AF_UNSPEC}
+//
+//@main def run(): Unit =
+//  def callback(status: Int, addrInfo: List[AddrInfo]): Unit =
+//    println(s"status: $status; addrInfo $addrInfo")
+//
+//  defaultLoop.getAddrInfo(callback, "google.com", null, AF_UNSPEC)
+//  defaultLoop.run()
 
 //  defaultLoop.spawn("sleep", Vector("3"))
 //  defaultLoop.run()
