@@ -9,9 +9,10 @@ import java.util.IdentityHashMap
 import scala.collection.mutable.ListBuffer
 import scala.io.Codec
 import scala.scalanative.posix.fcntl
+import scala.scalanative.posix.netinet
 import scala.scalanative.posix.netdb.{AI_CANONNAME, addrinfo}
 import scala.scalanative.posix.netdbOps.*
-import scala.scalanative.posix.sys.socket.SOCK_STREAM
+import scala.scalanative.posix.sys.socket.{AF_INET, SOCK_STREAM}
 import scala.scalanative.posix.sys.socketOps.*
 
 package object libuv:
@@ -209,13 +210,20 @@ package object libuv:
     val buf = new ListBuffer[AddrInfo]
     val addr = stackalloc[Byte](50)
 
-    println(s"status $status ${strError(status)}")
-    if res == null then println("addrinfo null")
-    else if res.ai_canonname != null then
-      println(fromCString(res.ai_canonname))
-      println(lib.uv_ip4_name(res.ai_addr.asInstanceOf[lib.sockaddr_inp], addr, 50.toUInt))
-      println(fromCString(addr))
-    else println(null)
+    if status == 0 then
+      var ptr = res
+
+      while ptr != null do
+        val canonname = fromCString(ptr.ai_canonname)
+
+        if ptr.ai_family == AF_INET then
+          checkError(lib.uv_ip4_name(ptr.ai_addr.asInstanceOf[lib.sockaddr_inp], addr, 50.toUInt), "uv_ip4_name")
+        else checkError(lib.uv_ip6_name(ptr.ai_addr.asInstanceOf[lib.sockaddr_inp6], addr, 50.toUInt), "uv_ip6_name")
+
+        val ip = fromCString(addr)
+
+        buf += AddrInfo(ptr.ai_family, ip, canonname)
+        ptr = ptr.ai_next.asInstanceOf[Ptr[addrinfo]]
 
     getaddrinfoCallbacks get req foreach (_(status, buf.toList))
     getaddrinfoCallbacks -= req
@@ -536,7 +544,7 @@ package object libuv:
 
   implicit class TCP(val handle: lib.uv_tcp_t) extends AnyVal:
     def bind(ip: String, port: Int, flags: Int): Int = Zone { implicit z =>
-      val socketAddress = stackalloc[Byte](lib.libuv_sockaddr_in_size).asInstanceOf[lib.sockaddr_inp]
+      val socketAddress = stackalloc[Byte](sizeof[netinet.in.sockaddr_in]).asInstanceOf[lib.sockaddr_inp]
 
       checkError(lib.uv_ip4_addr(toCString(ip), port, socketAddress), "uv_ip4_addr")
       checkError(lib.uv_tcp_bind(handle, socketAddress, flags), "uv_tcp_bind")

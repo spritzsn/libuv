@@ -2,7 +2,9 @@ package io.github.spritzsn.libuv.extern
 
 import scala.scalanative.unsafe._
 import scala.scalanative.unsigned._
-import scala.scalanative.posix.netdb.addrinfo
+import scala.scalanative.posix.netinet
+import scalanative.posix.sys.socket
+import scala.scalanative.posix.netdb
 
 @link("uv")
 @extern
@@ -14,15 +16,9 @@ object LibUV:
 
   def uv_eof: CInt = extern
 
-  def libuv_sockaddr_in_size: CUnsignedInt = extern
-
   def libuv_sockaddr_storage_size: CUnsignedInt = extern
 
-  def libuv_get_hints(req: uv_getaddrinfo_t): Ptr[addrinfo] = extern
-
-  def libuv_get_addrinfo(req: uv_getaddrinfo_t): Ptr[addrinfo] = extern
-
-//  def ipAddress(sock: sockaddr_inp): CUnsignedInt = extern
+  def libuv_get_hints(req: uv_getaddrinfo_t): Ptr[netdb.addrinfo] = extern
 
   //
   // Version-checking macros and functions
@@ -288,7 +284,7 @@ object LibUV:
   //
 
   type uv_getaddrinfo_t = Ptr[Ptr[Byte]]
-  type addrinfop = Ptr[addrinfo]
+  type addrinfop = Ptr[netdb.addrinfo]
   type uv_getaddrinfo_cb = CFuncPtr3[uv_getaddrinfo_t, CInt, addrinfop, Unit]
 
   def uv_getaddrinfo(
@@ -311,10 +307,8 @@ object LibUV:
   type uv_os_fd_t = CInt
   type uv_os_fd_tp = Ptr[uv_os_fd_t]
   type uv_pid_t = CInt
-  type sockaddr_in = CStruct0 // netinet/in.h
-  type sockaddr_inp = Ptr[sockaddr_in]
-  type sockaddr = CStruct0 // x86_64-linux-gnu/bits/socket.h
-  type sockaddrp = Ptr[sockaddr]
+  type sockaddr_inp = Ptr[netinet.in.sockaddr_in]
+  type sockaddrp = Ptr[socket.sockaddr]
 
   def uv_ip4_addr(ip: CString, port: CInt, addr: sockaddr_inp): CInt = extern
 
