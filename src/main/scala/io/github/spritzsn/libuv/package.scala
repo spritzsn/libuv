@@ -12,7 +12,7 @@ import scala.scalanative.posix.fcntl
 import scala.scalanative.posix.netinet
 import scala.scalanative.posix.netdb.{AI_CANONNAME, addrinfo}
 import scala.scalanative.posix.netdbOps.*
-import scala.scalanative.posix.sys.socket.{AF_INET, SOCK_STREAM}
+import scala.scalanative.posix.sys.socket.{sockaddr_storage, AF_INET, SOCK_STREAM}
 import scala.scalanative.posix.sys.socketOps.*
 
 package object libuv:
@@ -218,7 +218,7 @@ package object libuv:
 
         if ptr.ai_family == AF_INET then
           checkError(lib.uv_ip4_name(ptr.ai_addr.asInstanceOf[lib.sockaddr_inp], addr, 50.toUInt), "uv_ip4_name")
-        else checkError(lib.uv_ip6_name(ptr.ai_addr.asInstanceOf[lib.sockaddr_inp6], addr, 50.toUInt), "uv_ip6_name")
+        else checkError(lib.uv_ip6_name(ptr.ai_addr.asInstanceOf[lib.sockaddr_in6p], addr, 50.toUInt), "uv_ip6_name")
 
         val ip = fromCString(addr)
 
@@ -559,7 +559,7 @@ package object libuv:
 
       val dst = stackalloc[CChar](100)
 
-      checkError(lib.uv_ip4_name(sockaddr, dst, 100.toUInt), "uv_ip4_name")
+      checkError(lib.uv_ip4_name(sockaddr.asInstanceOf[lib.sockaddr_inp], dst, 100.toUInt), "uv_ip4_name")
       fromCString(dst)
 
     def getPeerName: String =
@@ -571,7 +571,7 @@ package object libuv:
 
       val dst = stackalloc[CChar](100)
 
-      checkError(lib.uv_ip4_name(sockaddr, dst, 100.toUInt), "uv_ip4_name")
+      checkError(lib.uv_ip4_name(sockaddr.asInstanceOf[lib.sockaddr_inp], dst, 100.toUInt), "uv_ip4_name")
       fromCString(dst)
 
     def listen(backlog: Int, cb: ConnectionCallback): Int =

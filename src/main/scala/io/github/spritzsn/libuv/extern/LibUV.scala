@@ -308,11 +308,16 @@ object LibUV:
   type uv_os_fd_tp = Ptr[uv_os_fd_t]
   type uv_pid_t = CInt
   type sockaddr_inp = Ptr[netinet.in.sockaddr_in]
+  type sockaddr_in6p = Ptr[netinet.in.sockaddr_in6]
   type sockaddrp = Ptr[socket.sockaddr]
 
   def uv_ip4_addr(ip: CString, port: CInt, addr: sockaddr_inp): CInt = extern
 
   def uv_ip4_name(src: sockaddr_inp, dst: CString, size: CSize): CInt = extern
+
+  def uv_ip6_addr(ip: CString, port: CInt, addr: sockaddr_in6p): CInt = extern
+
+  def uv_ip6_name(src: sockaddr_in6p, dst: CString, size: CSize): CInt = extern
 
   def uv_ip_name(src: sockaddrp, dst: CString, size: CSize): CInt = extern
 
