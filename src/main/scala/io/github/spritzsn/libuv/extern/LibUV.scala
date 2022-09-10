@@ -232,7 +232,7 @@ object LibUV:
 
   def uv_tcp_init(loop: uv_loop_t, handle: uv_tcp_t): CInt = extern
 
-  def uv_tcp_bind(handle: uv_tcp_t, addr: sockaddr_inp, flags: CInt): CInt = extern
+  def uv_tcp_bind(handle: uv_tcp_t, addr: sockaddrp, flags: CInt): CInt = extern
 
   def uv_tcp_getsockname(handle: uv_tcp_t, name: sockaddrp, namelen: Ptr[CInt]): CInt = extern
 

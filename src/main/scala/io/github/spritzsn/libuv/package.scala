@@ -12,6 +12,7 @@ import scala.scalanative.posix.fcntl
 import scala.scalanative.posix.netinet
 import scala.scalanative.posix.netdb.{AI_CANONNAME, addrinfo}
 import scala.scalanative.posix.netdbOps.*
+import scala.scalanative.posix.sys.socket
 import scala.scalanative.posix.sys.socket.{sockaddr_storage, AF_INET, SOCK_STREAM}
 import scala.scalanative.posix.sys.socketOps.*
 
@@ -203,6 +204,13 @@ package object libuv:
 
   type GetAddrInfoCallback = (Int, List[AddrInfo]) => Unit
   case class AddrInfo(family: Int, ip: String, canonicalName: String)
+//    private[libuv] var sockaddr: lib.sockaddrp
+//
+//    def copySockaddr: SockAddr =
+//      val newaddr = malloc[socket.sockaddr]()
+//
+//      string.memcpy(newaddr, sockaddr, sizeof[socket.sockaddr])
+//      newadddr
 
   private val getaddrinfoCallbacks = new mutable.HashMap[lib.uv_getaddrinfo_t, GetAddrInfoCallback]
 
@@ -221,8 +229,10 @@ package object libuv:
         else checkError(lib.uv_ip6_name(ptr.ai_addr.asInstanceOf[lib.sockaddr_in6p], addr, 50.toUInt), "uv_ip6_name")
 
         val ip = fromCString(addr)
+        val addrInfo = AddrInfo(ptr.ai_family, ip, canonname)
 
-        buf += AddrInfo(ptr.ai_family, ip, canonname)
+//        addrInfo.sockaddr = ptr.ai_addr
+        buf += addrInfo
         ptr = ptr.ai_next.asInstanceOf[Ptr[addrinfo]]
 
     getaddrinfoCallbacks get req foreach (_(status, buf.toList))
@@ -496,12 +506,6 @@ package object libuv:
   private val connectionCallback: lib.uv_connection_cb = (tcp: lib.uv_tcp_t, status: CInt) =>
     connectionCallbacks(tcp.toLong)(tcp, checkError(status, "uv_connection_cb"))
 
-//  val ALLOC_SIZE: CUnsignedInt = 1024.toUInt
-//
-//  type AllocCallback = (TCP, Int, Buffer) => Unit
-//
-//  private val allocCallbacks = new mutable.HashMap[lib.uv_tcp_t, AllocCallback]
-
   private val allocCallback: lib.uv_alloc_cb = (tcp: lib.uv_tcp_t, size: CSize, buf: lib.uv_buf_t) =>
     new Buffer(buf).alloc(size)
 
@@ -542,12 +546,34 @@ package object libuv:
 //      closeCallbacksTCP -= handle
       free(handle)
 
+  def ip4Addr(ip: String, port: Int): SockAddr =
+    val socketAddress = malloc[socket.sockaddr]()
+
+    checkError(lib.uv_ip4_addr(toCString(ip), port, socketAddress.asInstanceOf[lib.sockaddr_inp]), "uv_ip4_addr")
+    socketAddress
+
+  implicit class SockAddr(val ptr: lib.sockaddrp) extends AnyVal:
+    def dispose(): Unit = free(ptr)
+
   implicit class TCP(val handle: lib.uv_tcp_t) extends AnyVal:
     def bind(ip: String, port: Int, flags: Int): Int = Zone { implicit z =>
-      val socketAddress = stackalloc[Byte](sizeof[netinet.in.sockaddr_in]).asInstanceOf[lib.sockaddr_inp]
+      val socketAddress = stackalloc[Byte](sizeof[netinet.in.sockaddr_in])
 
-      checkError(lib.uv_ip4_addr(toCString(ip), port, socketAddress), "uv_ip4_addr")
-      checkError(lib.uv_tcp_bind(handle, socketAddress, flags), "uv_tcp_bind")
+      checkError(lib.uv_ip4_addr(toCString(ip), port, socketAddress.asInstanceOf[lib.sockaddr_inp]), "uv_ip4_addr")
+      checkError(lib.uv_tcp_bind(handle, socketAddress.asInstanceOf[lib.sockaddrp], flags), "uv_tcp_bind")
+    }
+
+    def connect(ip: String, port: Int, cb: Int): Int = Zone { implicit z =>
+      val socketAddress = stackalloc[Byte](sizeof[netinet.in.sockaddr_in])
+
+      checkError(lib.uv_ip4_addr(toCString(ip), port, socketAddress.asInstanceOf[lib.sockaddr_inp]), "uv_ip4_addr")
+
+      val req = mallocReq[lib.uv_connect_t](ReqType.CONNECT)
+
+      checkError(
+        lib.uv_tcp_connect(req, handle, socketAddress.asInstanceOf[lib.sockaddrp], connectCallback),
+        "uv_tcp_bind",
+      )
     }
 
     def getSockName: String =
