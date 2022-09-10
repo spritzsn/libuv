@@ -1,13 +1,20 @@
-//package io.github.spritzsn.libuv
-//
-//import scala.scalanative.posix.sys.socket.{AF_INET, AF_UNSPEC}
-//
-//@main def run(): Unit =
-//  def callback(status: Int, addrInfo: List[AddrInfo]): Unit =
-//    println(s"status: $status; addrInfo $addrInfo")
-//
-//  defaultLoop.getAddrInfo(callback, "google.com", null, AF_UNSPEC)
-//  defaultLoop.run()
+package io.github.spritzsn.libuv
+
+import scala.scalanative.posix.sys.socket.{AF_INET, AF_UNSPEC}
+
+@main def run(): Unit =
+  def dnsCallback(status: Int, addrInfo: List[AddrInfo]): Unit =
+    println(s"status: $status; addrInfo $addrInfo")
+
+    val h = defaultLoop.tcp
+
+    def connectCallback(status: Int): Unit =
+      println(s"status: $status; error: ${strError(status)}")
+
+    h.connect(addrInfo.head.ip, 3000, connectCallback)
+
+  defaultLoop.getAddrInfo(dnsCallback, "localhost", null, AF_UNSPEC)
+  defaultLoop.run()
 
 //  defaultLoop.spawn("sleep", Vector("3"))
 //  defaultLoop.run()
