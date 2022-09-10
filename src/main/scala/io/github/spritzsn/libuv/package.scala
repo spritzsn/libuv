@@ -546,11 +546,12 @@ package object libuv:
 //      closeCallbacksTCP -= handle
       free(handle)
 
-  def ip4Addr(ip: String, port: Int): SockAddr =
+  def ip4Addr(ip: String, port: Int): SockAddr = Zone { implicit z =>
     val socketAddress = malloc[socket.sockaddr]()
 
     checkError(lib.uv_ip4_addr(toCString(ip), port, socketAddress.asInstanceOf[lib.sockaddr_inp]), "uv_ip4_addr")
     socketAddress
+  }
 
   implicit class SockAddr(val ptr: lib.sockaddrp) extends AnyVal:
     def dispose(): Unit = free(ptr)
@@ -560,7 +561,7 @@ package object libuv:
   private val connectCallbacks = new mutable.HashMap[lib.uv_connect_t, ConnectCallback]
 
   val connectCallback: lib.uv_connect_cb =
-    (req, status) =>
+    (req: lib.uv_connect_t, status: Int) =>
       connectCallbacks(req)(status)
       connectCallbacks -= req
       free(req)
@@ -573,12 +574,12 @@ package object libuv:
       checkError(lib.uv_tcp_bind(handle, socketAddress.asInstanceOf[lib.sockaddrp], flags), "uv_tcp_bind")
     }
 
-    private def connect(sockaddr: lib.sockaddrp, cb: ConnectCallback): Int =
+    def connect(sockaddr: SockAddr, cb: ConnectCallback): Int =
       val req = mallocReq[lib.uv_connect_t](ReqType.CONNECT)
 
-      ConnectCallbacks(req) = cb
+      connectCallbacks(req) = cb
       checkError(
-        lib.uv_tcp_connect(req, handle, sockaddr, connectCallback),
+        lib.uv_tcp_connect(req, handle, sockaddr.ptr, connectCallback),
         "uv_tcp_connect",
       )
 
@@ -588,8 +589,6 @@ package object libuv:
       checkError(lib.uv_ip4_addr(toCString(ip), port, socketAddress.asInstanceOf[lib.sockaddr_inp]), "uv_ip4_addr")
       connect(socketAddress.asInstanceOf[lib.sockaddrp], cb)
     }
-
-    def connect(sockaddr: SockAddr, cb: ConnectCallback): Int = connect(sockaddr.ptr, cb)
 
     def getSockName: String =
       val sockaddr = stackalloc[Byte](lib.libuv_sockaddr_storage_size).asInstanceOf[lib.sockaddrp]
