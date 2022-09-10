@@ -10,10 +10,14 @@ import scala.scalanative.posix.sys.socket.{AF_INET, AF_UNSPEC}
 
     def connectCallback(status: Int): Unit =
       println(s"status: $status; error: ${strError(status)}")
+      h.write("GET / HTTP/1.0\r\nHost: localhost\r\n\r\n".getBytes)
+
+      def readCallback(stream: TCP, size: Int, buf: Buffer): Unit =
+        h.readStart(readCallback)
 
     h.connect(addrInfo.head.ip, 3000, connectCallback)
 
-  defaultLoop.getAddrInfo(dnsCallback, "localhost", null, AF_UNSPEC)
+  defaultLoop.getAddrInfo(dnsCallback, "localhost", null, AF_INET)
   defaultLoop.run()
 
 //  defaultLoop.spawn("sleep", Vector("3"))
