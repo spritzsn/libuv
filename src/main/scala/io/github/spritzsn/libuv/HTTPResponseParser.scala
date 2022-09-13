@@ -6,9 +6,9 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 class HTTPResponseParser extends Machine:
   val start: State = versionState
 
-  var method: String = null
   var version: String = null
   var status: String = null
+  var reason: String = null
   val headers =
     new mutable.TreeMap[String, String]()(scala.math.Ordering.comparatorToOrdering(String.CASE_INSENSITIVE_ORDER))
   var key: String = _
@@ -28,7 +28,7 @@ class HTTPResponseParser extends Machine:
   case object versionState extends NonEmptyAccState:
     def on = {
       case ' ' =>
-        method = buf.toString
+        version = buf.toString
         transition(statusState)
       case '\r' | '\n' => badRequest
       case b           => acc(b)
@@ -46,7 +46,7 @@ class HTTPResponseParser extends Machine:
   case object reasonState extends AccState:
     def on = {
       case '\r' =>
-        version = buf.toString
+        reason = buf.toString
         transition(value2keyState)
       case '\n' => badRequest
       case b    => acc(b)
