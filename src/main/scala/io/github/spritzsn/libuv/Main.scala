@@ -1,24 +1,40 @@
-package io.github.spritzsn.libuv
-
-import scala.scalanative.posix.sys.socket.{AF_INET, AF_UNSPEC}
-
-@main def run(): Unit =
-  def dnsCallback(status: Int, addrInfo: List[AddrInfo]): Unit =
-    println(s"status: $status; addrInfo $addrInfo")
-
-    val h = defaultLoop.tcp
-
-    def connectCallback(status: Int): Unit =
-      println(s"status: $status; error: ${strError(status)}")
-      h.write("GET / HTTP/1.0\r\nHost: localhost\r\n\r\n".getBytes)
-
-      def readCallback(stream: TCP, size: Int, buf: Buffer): Unit =
-        h.readStart(readCallback)
-
-    h.connect(addrInfo.head.ip, 3000, connectCallback)
-
-  defaultLoop.getAddrInfo(dnsCallback, "localhost", null, AF_INET)
-  defaultLoop.run()
+//package io.github.spritzsn.libuv
+//
+//import scala.scalanative.posix.sys.socket.{AF_INET, AF_UNSPEC}
+//
+//@main def run(): Unit =
+//  val parser = new HTTPResponseParser
+//  var ex: Option[Exception] = None
+//
+//  def dnsCallback(status: Int, addrInfo: List[AddrInfo]): Unit =
+//    println(s"dnsCallback status: $status; addrInfo $addrInfo")
+//
+//    val h = defaultLoop.tcp
+//
+//    def connectCallback(status: Int): Unit =
+//      println(s"connectCallback status: $status; error: ${strError(status)}")
+//      h.write("GET / HTTP/1.0\r\nHost: localhost\r\n\r\n".getBytes)
+//
+//      def readCallback(stream: TCP, size: Int, buf: Buffer): Unit =
+//        println(s"readCallback size: $size eof $eof")
+//        if size < 0 then
+//          stream.readStop
+//          if size != eof then println(s"error in read callback: ${errName(size)}: ${strError(size)}") // todo
+//        else if size > 0 then
+//          try
+//            for i <- 0 until size do parser send buf(i)
+//            if parser.isFinal then println(parser)
+//          catch case e: Exception => ex = Some(e)
+//      end readCallback
+//
+//      h.readStart(readCallback)
+//
+//    h.connect(addrInfo.head.ip, 3000, connectCallback)
+//
+//  defaultLoop.getAddrInfo(dnsCallback, "localhost", null, AF_INET)
+//  defaultLoop.run()
+//  println("done")
+//  println(parser)
 
 //  defaultLoop.spawn("sleep", Vector("3"))
 //  defaultLoop.run()
