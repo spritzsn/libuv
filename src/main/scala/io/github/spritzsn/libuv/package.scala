@@ -544,6 +544,7 @@ package object libuv:
     (handle: lib.uv_tcp_t) =>
 //      closeCallbacksTCP(handle)(handle)
 //      closeCallbacksTCP -= handle
+      readCallbacks -= handle
       free(handle)
 
   def ip4Addr(ip: String, port: Int): SockAddr = Zone { implicit z =>
@@ -627,8 +628,10 @@ package object libuv:
 
     def readStop: Int =
 //      allocCallbacks -= handle
+      val res = checkError(lib.uv_read_stop(handle), "uv_read_stop")
+
       readCallbacks -= handle
-      checkError(lib.uv_read_stop(handle), "uv_read_start")
+      res
 
     def isReadable: Boolean = lib.uv_is_readable(handle) > 0
 
