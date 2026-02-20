@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <uv.h>
 
 int libuv_eof() { return UV_EOF; }
