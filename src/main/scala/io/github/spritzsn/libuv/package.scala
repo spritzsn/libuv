@@ -139,7 +139,7 @@ package object libuv:
     val ts = stackalloc[lib.uv_timespec64_t]()
 
     checkError(lib.uv_clock_gettime(clockId, ts), "uv_clock_gettime")
-    (ts._1, ts._2)
+    (ts._1.toLong, ts._2)
 
   def getHostname: String =
     val buffer = stackalloc[CChar](256.toUInt)
@@ -153,7 +153,7 @@ package object libuv:
     val tv = stackalloc[lib.uv_timeval64_t]()
 
     lib.uv_gettimeofday(tv)
-    (tv._1, tv._2)
+    (tv._1.toLong, tv._2)
 
   def loopInit: Loop =
     val loop = stdlib.malloc(lib.uv_loop_size)
@@ -161,10 +161,10 @@ package object libuv:
     lib.uv_loop_init(loop)
     loop
 
-  private def free(p: Ptr[_]): Unit = stdlib.free(p.asInstanceOf[Ptr[Byte]])
+  private def free(p: Ptr[?]): Unit = stdlib.free(p.asInstanceOf[Ptr[Byte]])
 
-  private inline def malloc[T](inline n: CSize = 1.toULong)(using Tag[T]): Ptr[T] =
-    stdlib.malloc(sizeof[T] * n.toULong).asInstanceOf[Ptr[T]]
+  private inline def malloc[T]()(using Tag[T]): Ptr[T] =
+    stdlib.malloc(sizeof[T]).asInstanceOf[Ptr[T]]
 
   private def mallocReq[T](typ: ReqType): T = stdlib.malloc(lib.uv_req_size(typ.value)).asInstanceOf[T]
 
@@ -265,7 +265,7 @@ package object libuv:
 
     def updateTime(): Unit = lib.uv_update_time(loop)
 
-    def now: Long = lib.uv_now(loop)
+    def now: Long = lib.uv_now(loop).toLong
 
     def timer: Timer =
       val timer = mallocHandle[lib.uv_timer_t](HandleType.TIMER)
@@ -328,7 +328,7 @@ package object libuv:
       val req = allocfs
 
       fileCallbacks(req) = cb
-      Zone { implicit z =>
+      Zone {
         checkError(lib.uv_fs_open(loop, req, toCString(path), flags, mode, fileCallback), "uv_fs_open")
       }
 
@@ -375,7 +375,7 @@ package object libuv:
       hints.ai_flags |= AI_CANONNAME
       hints.ai_socktype = SOCK_STREAM
       getaddrinfoCallbacks(req) = getaddrinfo_cb
-      Zone { implicit z =>
+      Zone {
         lib.uv_getaddrinfo(loop, req, getaddrinfoCallback, toCString(node), toCString(service), hints)
       }
   end Loop
@@ -391,7 +391,7 @@ package object libuv:
   implicit class Timer(val handle: lib.uv_timer_t) extends AnyVal:
     def start(callback: Timer => Unit, timeout: Long, repeat: Long = 0): Int =
       timerCallbacks(handle) = callback
-      lib.uv_timer_start(handle, timerCallback, timeout, repeat)
+      lib.uv_timer_start(handle, timerCallback, timeout.asInstanceOf[CLong], repeat.asInstanceOf[CLong])
 
     def stop: Int = lib.uv_timer_stop(handle)
 
@@ -463,7 +463,7 @@ package object libuv:
       val base = stdlib.malloc(size.toUInt)
 
       !buf.baseptr = base
-      !buf.lenptr = size.toULong
+      !buf.lenptr = size.toCSize
       buf
 
   implicit class Buffer(val buf: lib.uv_buf_t) extends AnyVal:
@@ -476,7 +476,7 @@ package object libuv:
     def update(idx: Int, b: Int): Unit = !(!baseptr + idx) = b.toByte
 
     private[libuv] def alloc(size: CSize): Unit =
-      !baseptr = malloc(size)
+      !baseptr = stdlib.malloc(size)
       !lenptr = size
 
     def size: Int = (!lenptr).toInt
@@ -564,7 +564,7 @@ package object libuv:
       readCallbacks -= handle
       free(handle)
 
-  def ip4Addr(ip: String, port: Int): SockAddr = Zone { implicit z =>
+  def ip4Addr(ip: String, port: Int): SockAddr = Zone {
     val socketAddress = malloc[socket.sockaddr]()
 
     checkError(lib.uv_ip4_addr(toCString(ip), port, socketAddress.asInstanceOf[lib.sockaddr_inp]), "uv_ip4_addr")
@@ -585,7 +585,7 @@ package object libuv:
       free(req)
 
   implicit class TCP(val handle: lib.uv_tcp_t) extends AnyVal:
-    def bind(ip: String, port: Int, flags: Int): Int = Zone { implicit z =>
+    def bind(ip: String, port: Int, flags: Int): Int = Zone {
       val socketAddress = stackalloc[Byte](sizeof[netinet.in.sockaddr_in])
 
       checkError(lib.uv_ip4_addr(toCString(ip), port, socketAddress.asInstanceOf[lib.sockaddr_inp]), "uv_ip4_addr")
@@ -601,7 +601,7 @@ package object libuv:
         "uv_tcp_connect",
       )
 
-    def connect(ip: String, port: Int, cb: ConnectCallback): Int = Zone { implicit z =>
+    def connect(ip: String, port: Int, cb: ConnectCallback): Int = Zone {
       val socketAddress = stackalloc[Byte](sizeof[netinet.in.sockaddr_in])
 
       checkError(lib.uv_ip4_addr(toCString(ip), port, socketAddress.asInstanceOf[lib.sockaddr_inp]), "uv_ip4_addr")
@@ -691,7 +691,7 @@ package object libuv:
 
   def allocString(s: String): CString =
     val bytes = s.getBytes(scala.io.Codec.UTF8.charSet)
-    val cstr = stdlib.malloc((bytes.length + 1).toULong)
+    val cstr = stdlib.malloc(bytes.length + 1)
     var c = 0
 
     while c < bytes.length do
