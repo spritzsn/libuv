@@ -32,7 +32,7 @@ ThisBuild / developers := List(
   ),
 )
 
-ThisBuild / homepage := Some(url("https://github.com/edadma/libuv"))
+ThisBuild / homepage    := Some(url("https://github.com/edadma/libuv"))
 ThisBuild / description := "Scala Native bindings for libuv"
 
 ThisBuild / publishTo := sonatypePublishToBundle.value
@@ -40,8 +40,6 @@ ThisBuild / publishTo := sonatypePublishToBundle.value
 name := "libuv"
 
 enablePlugins(ScalaNativePlugin)
-
-nativeMode := "debug"
 
 scalacOptions ++= Seq(
   "-deprecation",
