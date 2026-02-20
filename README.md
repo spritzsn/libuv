@@ -1,8 +1,8 @@
 # libuv
 
 ![Maven Central](https://img.shields.io/maven-central/v/io.github.edadma/libuv_native0.5_3)
-[![Last Commit](https://img.shields.io/github/last-commit/edadma/libuv)](https://github.com/edadma/libuv/commits)
-![GitHub](https://img.shields.io/github/license/edadma/libuv)
+[![Last Commit](https://img.shields.io/github/last-commit/spritzsn/libuv)](https://github.com/spritzsn/libuv/commits)
+![GitHub](https://img.shields.io/github/license/spritzsn/libuv)
 ![Scala Version](https://img.shields.io/badge/Scala-3.8.1-blue.svg)
 ![Scala Native Version](https://img.shields.io/badge/Scala_Native-0.5.10-blue.svg)
 
