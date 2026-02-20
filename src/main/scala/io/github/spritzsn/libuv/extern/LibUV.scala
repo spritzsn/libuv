@@ -331,6 +331,32 @@ object LibUV:
   def uv_gettimeofday(tv: uv_timeval64_tp): CInt = extern
 
   //
+  // Clock (libuv 1.45+)
+  //
+
+  type uv_clock_id = CInt
+  type uv_timespec64_t = CStruct2[CLong, CInt]
+  type uv_timespec64_tp = Ptr[uv_timespec64_t]
+
+  def uv_clock_gettime(clock_id: uv_clock_id, ts: uv_timespec64_tp): CInt = extern
+
+  //
+  // System info (libuv 1.44+)
+  //
+
+  def uv_available_parallelism: CUnsignedInt = extern
+
+  def uv_get_available_memory: CUnsignedLong = extern
+
+  def uv_os_getppid: uv_pid_t = extern
+
+  //
+  // Metrics (libuv 1.39+)
+  //
+
+  def uv_metrics_idle_time(loop: uv_loop_t): CUnsignedLong = extern
+
+  //
 
   type TTYHandle = Ptr[Byte]
   type Connection = Ptr[Byte]
@@ -344,6 +370,17 @@ object LibUV:
   def uv_pipe_open(handle: uv_stream_t, fd: CInt): CInt = extern
 
   def uv_pipe_bind(handle: uv_stream_t, socketName: CString): CInt = extern
+
+  def uv_pipe_bind2(handle: uv_stream_t, name: CString, namelen: CSize, flags: CUnsignedInt): CInt = extern
+
+  def uv_pipe_connect2(
+      req: uv_connect_t,
+      handle: uv_stream_t,
+      name: CString,
+      namelen: CSize,
+      flags: CUnsignedInt,
+      cb: uv_connect_cb,
+  ): CInt = extern
 
   def uv_guess_handle(fd: CInt): CInt = extern
 

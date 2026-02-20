@@ -124,7 +124,22 @@ package object libuv:
 
   def errName(err: Int): String = fromCString(lib.uv_err_name(err))
 
+  val UV_CLOCK_MONOTONIC = 0
+  val UV_CLOCK_REALTIME = 1
+
   def hrTime: Long = lib.uv_hrtime.toLong
+
+  def availableParallelism: Int = lib.uv_available_parallelism.toInt
+
+  def availableMemory: Long = lib.uv_get_available_memory.toLong
+
+  def parentPid: Int = lib.uv_os_getppid
+
+  def clockGetTime(clockId: Int = UV_CLOCK_MONOTONIC): (Long, Int) =
+    val ts = stackalloc[lib.uv_timespec64_t]()
+
+    checkError(lib.uv_clock_gettime(clockId, ts), "uv_clock_gettime")
+    (ts._1, ts._2)
 
   def getHostname: String =
     val buffer = stackalloc[CChar](256.toUInt)
@@ -245,6 +260,8 @@ package object libuv:
     def run(mode: RunMode = RunMode.RUN_DEFAULT): Int = lib.uv_run(loop, mode.value)
 
     def isAlive: Boolean = lib.uv_loop_alive(loop) > 0
+
+    def metricsIdleTime: Long = lib.uv_metrics_idle_time(loop).toLong
 
     def updateTime(): Unit = lib.uv_update_time(loop)
 

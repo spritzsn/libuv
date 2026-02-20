@@ -1,18 +1,47 @@
+import xerial.sbt.Sonatype.sonatypeCentralHost
+
+ThisBuild / licenses               := Seq("ISC" -> url("https://opensource.org/licenses/ISC"))
+ThisBuild / versionScheme          := Some("semver-spec")
+ThisBuild / evictionErrorLevel     := Level.Warn
+ThisBuild / scalaVersion           := "3.8.1"
+ThisBuild / organization           := "io.github.spritzsn"
+ThisBuild / organizationName       := "edadma"
+ThisBuild / organizationHomepage   := Some(url("https://github.com/edadma"))
+ThisBuild / version                := "0.0.28"
+ThisBuild / sonatypeCredentialHost := sonatypeCentralHost
+
+ThisBuild / publishConfiguration := publishConfiguration.value.withOverwrite(true).withChecksums(Vector.empty)
+ThisBuild / resolvers += Resolver.mavenLocal
+ThisBuild / resolvers += Resolver.sonatypeCentralSnapshots
+ThisBuild / resolvers += Resolver.sonatypeCentralRepo("releases")
+
+ThisBuild / sonatypeProfileName := "io.github.edadma"
+
+ThisBuild / scmInfo := Some(
+  ScmInfo(
+    url("https://github.com/edadma/libuv"),
+    "scm:git@github.com:edadma/libuv.git",
+  ),
+)
+ThisBuild / developers := List(
+  Developer(
+    id = "edadma",
+    name = "Edward A. Maxedon, Sr.",
+    email = "edadma@gmail.com",
+    url = url("https://github.com/edadma"),
+  ),
+)
+
+ThisBuild / homepage := Some(url("https://github.com/edadma/libuv"))
+ThisBuild / description := "Scala Native bindings for libuv"
+
+ThisBuild / publishTo := sonatypePublishToBundle.value
+
 name := "libuv"
-
-version := "0.0.27"
-
-versionScheme := Some("early-semver")
-
-scalaVersion := "3.2.0"
 
 enablePlugins(ScalaNativePlugin)
 
-nativeLinkStubs := true
-
 nativeMode := "debug"
-
-//nativeLinkingOptions := Seq(s"-L/${baseDirectory.value}/native-lib")
 
 scalacOptions ++= Seq(
   "-deprecation",
@@ -23,23 +52,7 @@ scalacOptions ++= Seq(
   "-language:existentials",
 )
 
-organization := "io.github.spritzsn"
-
-githubOwner := "spritzsn"
-
-githubRepository := name.value
-
-Global / onChangedBuildSource := ReloadOnSourceChanges
-
-resolvers += "Typesafe Repository" at "https://repo.typesafe.com/typesafe/releases/"
-
-resolvers += Resolver.githubPackages("edadma")
-
-licenses := Seq("ISC" -> url("https://opensource.org/licenses/ISC"))
-
-homepage := Some(url("https://github.com/edadma/" + name.value))
-
-//libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.12" % "test"
+libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.19" % "test"
 
 publishMavenStyle := true
 
