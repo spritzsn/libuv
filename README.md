@@ -1,6 +1,6 @@
 # libuv
 
-![Maven Central](https://img.shields.io/maven-central/v/io.github.spritzsn/libuv_native0.5_3)
+![Maven Central](https://img.shields.io/maven-central/v/io.github.edadma/libuv_native0.5_3)
 [![Last Commit](https://img.shields.io/github/last-commit/edadma/libuv)](https://github.com/edadma/libuv/commits)
 ![GitHub](https://img.shields.io/github/license/edadma/libuv)
 ![Scala Version](https://img.shields.io/badge/Scala-3.8.1-blue.svg)
@@ -46,7 +46,7 @@ sudo pacman -S libuv
 Add to your `build.sbt`:
 
 ```scala
-libraryDependencies += "io.github.spritzsn" %%% "libuv" % "0.0.28"
+libraryDependencies += "io.github.edadma" %%% "libuv" % "0.0.28"
 ```
 
 ### Quick example: TCP echo server
