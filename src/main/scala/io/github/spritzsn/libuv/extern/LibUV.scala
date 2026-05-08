@@ -54,7 +54,8 @@ object LibUV:
 
   def uv_update_time(loop: uv_loop_t): Unit = extern
 
-  def uv_now(loop: uv_loop_t): CLong = extern
+  // libuv: uint64_t uv_now(const uv_loop_t* loop);
+  def uv_now(loop: uv_loop_t): Size = extern
 
   def uv_loop_alive(loop: uv_loop_t): CInt = extern
 
@@ -100,7 +101,10 @@ object LibUV:
 
   def uv_timer_init(loop: uv_loop_t, handle: uv_timer_t): CInt = extern
 
-  def uv_timer_start(handle: uv_timer_t, cb: uv_timer_cb, timeout: CLong, repeat: CLong): CInt = extern
+  // libuv: int uv_timer_start(uv_timer_t* handle, uv_timer_cb cb, uint64_t timeout, uint64_t repeat);
+  // uint64_t is SN's `Size` on 64-bit; using the wrong width here makes SN's
+  // FFI runtime reject the call with a ClassCastException at the call site.
+  def uv_timer_start(handle: uv_timer_t, cb: uv_timer_cb, timeout: Size, repeat: Size): CInt = extern
 
   def uv_timer_stop(handle: uv_timer_t): CInt = extern
 

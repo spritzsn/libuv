@@ -389,9 +389,13 @@ package object libuv:
   private val timerCallback: lib.uv_timer_cb = (t: lib.uv_timer_t) => timerCallbacks(t)(t)
 
   implicit class Timer(val handle: lib.uv_timer_t) extends AnyVal:
+    // libuv's timeout/repeat are uint64_t — passed as `Size` after the
+    // 2026-05-08 fix; the previous `asInstanceOf[CLong]` blew up at runtime
+    // because SN's FFI runtime checks values against the actual extern
+    // signature, not the Scala-side declared type.
     def start(callback: Timer => Unit, timeout: Long, repeat: Long = 0): Int =
       timerCallbacks(handle) = callback
-      lib.uv_timer_start(handle, timerCallback, timeout.asInstanceOf[CLong], repeat.asInstanceOf[CLong])
+      lib.uv_timer_start(handle, timerCallback, timeout.toSize, repeat.toSize)
 
     def stop: Int = lib.uv_timer_stop(handle)
 
