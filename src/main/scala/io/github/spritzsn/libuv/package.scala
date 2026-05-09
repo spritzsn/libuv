@@ -291,6 +291,12 @@ package object libuv:
       checkError(lib.uv_idle_init(loop, idle), "uv_idle_init")
       idle
 
+    def fsEvent: FsEvent =
+      val handle = mallocHandle[lib.uv_fs_event_t](HandleType.FS_EVENT)
+
+      checkError(lib.uv_fs_event_init(loop, handle), "uv_fs_event_init")
+      handle
+
     def tcp: TCP =
       val tcp = mallocHandle[lib.uv_tcp_t](HandleType.TCP)
 
@@ -448,6 +454,50 @@ package object libuv:
 
     def dispose(): Unit =
       idleCallbacks -= handle
+      free(handle)
+
+  /** libuv `uv_fs_event` flag values. Combine with `|` and pass to
+    * `FsEvent.start(..., flags = …)`.
+    *
+    *   - `WATCH_ENTRY` (1): on platforms that support it, watch the entry
+    *     itself rather than its containing directory (rarely useful).
+    *   - `STAT` (2): use stat-polling instead of native events. Slow.
+    *   - `RECURSIVE` (4): recursively watch a directory tree. Supported on
+    *     macOS and Windows; NOT supported on Linux (libuv returns ENOSYS).
+    */
+  val UV_FS_EVENT_WATCH_ENTRY = 1
+  val UV_FS_EVENT_STAT        = 2
+  val UV_FS_EVENT_RECURSIVE   = 4
+
+  /** libuv `uv_fs_event` event-mask bits passed to the callback. */
+  val UV_RENAME = 1
+  val UV_CHANGE = 2
+
+  type FsEventCallback = (FsEvent, String, Int, Int) => Unit
+
+  private val fsEventCallbacks = new mutable.HashMap[lib.uv_fs_event_t, FsEventCallback]
+
+  private val fsEventCallback: lib.uv_fs_event_cb =
+    (handle: lib.uv_fs_event_t, filename: CString, events: CInt, status: CInt) =>
+      fsEventCallbacks.get(handle).foreach { cb =>
+        val name = if filename == null then "" else fromCString(filename)
+        cb(handle, name, events, status)
+      }
+
+  implicit class FsEvent(val handle: lib.uv_fs_event_t) extends AnyVal:
+    def start(path: String, flags: Int = 0)(callback: FsEventCallback): Int =
+      fsEventCallbacks(handle) = callback
+      Zone {
+        checkError(
+          lib.uv_fs_event_start(handle, fsEventCallback, toCString(path), flags.toUInt),
+          "uv_fs_event_start",
+        )
+      }
+
+    def stop: Int = lib.uv_fs_event_stop(handle)
+
+    def dispose(): Unit =
+      fsEventCallbacks -= handle
       free(handle)
 
   implicit class Poll(val handle: lib.uv_poll_t) extends AnyVal:

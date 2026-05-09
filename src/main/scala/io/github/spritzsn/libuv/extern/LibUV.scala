@@ -109,6 +109,22 @@ object LibUV:
   def uv_timer_stop(handle: uv_timer_t): CInt = extern
 
   //
+  // uv_fs_event_t — Filesystem-event handle
+  //
+
+  type uv_fs_event_t = Ptr[Byte]
+  // libuv: void (*uv_fs_event_cb)(uv_fs_event_t* handle, const char* filename, int events, int status);
+  type uv_fs_event_cb = CFuncPtr4[uv_fs_event_t, CString, CInt, CInt, Unit]
+
+  def uv_fs_event_init(loop: uv_loop_t, handle: uv_fs_event_t): CInt = extern
+
+  // flags: combination of UV_FS_EVENT_{WATCH_ENTRY|STAT|RECURSIVE} (we expose
+  // the constants in package.scala)
+  def uv_fs_event_start(handle: uv_fs_event_t, cb: uv_fs_event_cb, path: CString, flags: CUnsignedInt): CInt = extern
+
+  def uv_fs_event_stop(handle: uv_fs_event_t): CInt = extern
+
+  //
   // uv_prepare_t — Prepare handle
   //
 
