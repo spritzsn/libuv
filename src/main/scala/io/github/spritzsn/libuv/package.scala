@@ -9,7 +9,9 @@ import java.util.IdentityHashMap
 import scala.collection.mutable.ListBuffer
 import scala.io.Codec
 import scala.scalanative.posix.fcntl
+import scala.scalanative.posix.arpa.inet.ntohs
 import scala.scalanative.posix.netinet
+import scala.scalanative.posix.netinet.inOps.*
 import scala.scalanative.posix.netdb.{AI_CANONNAME, addrinfo}
 import scala.scalanative.posix.netdbOps.*
 import scala.scalanative.posix.sys.socket
@@ -674,6 +676,27 @@ package object libuv:
       checkError(lib.uv_ip4_name(sockaddr.asInstanceOf[lib.sockaddr_inp], dst, 100.toUInt), "uv_ip4_name")
       fromCString(dst)
 
+    /** Bound (host, port) of the local end of this socket. The port is the
+      * actual port the kernel assigned — useful when binding to port 0 so
+      * tests and dev tools can read back the chosen ephemeral port.
+      *
+      * IPv4 only at present (matches `getSockName`).
+      */
+    def getSockNameWithPort: (String, Int) =
+      val sockaddr = stackalloc[Byte](lib.libuv_sockaddr_storage_size).asInstanceOf[lib.sockaddrp]
+      val namelen = stackalloc[CInt]()
+
+      !namelen = lib.libuv_sockaddr_storage_size.toInt
+      checkError(lib.uv_tcp_getsockname(handle, sockaddr, namelen), "uv_tcp_getsockname")
+
+      val dst = stackalloc[CChar](100)
+      val sin = sockaddr.asInstanceOf[lib.sockaddr_inp]
+
+      checkError(lib.uv_ip4_name(sin, dst, 100.toUInt), "uv_ip4_name")
+      // sin_port is in network byte order; ntohs converts to host order.
+      // Cast through Int so the unsigned 16-bit value lands as a positive Int.
+      (fromCString(dst), ntohs(sin.sin_port).toInt & 0xffff)
+
     def getPeerName: String =
       val sockaddr = stackalloc[Byte](lib.libuv_sockaddr_storage_size).asInstanceOf[lib.sockaddrp]
       val namelen = stackalloc[CInt]()
@@ -685,6 +708,22 @@ package object libuv:
 
       checkError(lib.uv_ip4_name(sockaddr.asInstanceOf[lib.sockaddr_inp], dst, 100.toUInt), "uv_ip4_name")
       fromCString(dst)
+
+    /** Connected (host, port) of the remote end of this socket. Companion to
+      * [[getSockNameWithPort]]. IPv4 only at present.
+      */
+    def getPeerNameWithPort: (String, Int) =
+      val sockaddr = stackalloc[Byte](lib.libuv_sockaddr_storage_size).asInstanceOf[lib.sockaddrp]
+      val namelen = stackalloc[CInt]()
+
+      !namelen = lib.libuv_sockaddr_storage_size.toInt
+      checkError(lib.uv_tcp_getpeername(handle, sockaddr, namelen), "uv_tcp_getpeername")
+
+      val dst = stackalloc[CChar](100)
+      val sin = sockaddr.asInstanceOf[lib.sockaddr_inp]
+
+      checkError(lib.uv_ip4_name(sin, dst, 100.toUInt), "uv_ip4_name")
+      (fromCString(dst), ntohs(sin.sin_port).toInt & 0xffff)
 
     def listen(backlog: Int, cb: ConnectionCallback): Int =
       connectionCallbacks(handle.toLong) = cb
